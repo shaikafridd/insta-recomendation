@@ -4,7 +4,7 @@ import { ReelsFeed } from './components/ReelsFeed';
 import { RecommendationModal } from './components/RecommendationModal';
 import { ProfileModal } from './components/ProfileModal';
 import { Toast } from './components/Toast';
-import { fetchReels, syncCloudinaryReels } from './services/api';
+import { fetchReels } from './services/api';
 import { useUser } from './context/UserContext';
 import './styles/index.css';
 import './styles/sidebar.css';
@@ -33,17 +33,6 @@ export const App = () => {
       console.error('Failed to load reels catalog:', err);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleSyncCloudinary = async () => {
-    showToast('☁️ Fetching reels from Cloudinary & generating AI metadata...');
-    try {
-      const result = await syncCloudinaryReels();
-      showToast(`✅ Synced ${result.syncedCount || 0} reels from Cloudinary!`);
-      await loadCatalog();
-    } catch (err) {
-      showToast(`⚠️ Sync failed: ${err.message}`);
     }
   };
 
@@ -78,7 +67,6 @@ export const App = () => {
       <Sidebar
         onOpenRecommendations={() => setIsRecModalOpen(true)}
         onOpenProfile={() => setIsProfileModalOpen(true)}
-        onSyncCloudinary={handleSyncCloudinary}
       />
 
       {/* Main Reels Feed Area */}

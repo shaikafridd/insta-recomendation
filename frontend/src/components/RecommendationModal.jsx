@@ -1,16 +1,23 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useUser } from '../context/UserContext';
 import { fetchRecommendation } from '../services/api';
 
 export const RecommendationModal = ({ isOpen, onClose, onJumpToReel }) => {
-  const { userId } = useUser();
+  const { userId, interactionCount, sessionDwellSeconds } = useUser();
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState(null);
   const [error, setError] = useState(null);
+  const [isPlayingPreview, setIsPlayingPreview] = useState(false);
+  const videoPreviewRef = useRef(null);
 
   useEffect(() => {
     if (isOpen) {
       loadRecommendation();
+    } else {
+      setIsPlayingPreview(false);
+      if (videoPreviewRef.current) {
+        videoPreviewRef.current.pause();
+      }
     }
   }, [isOpen, userId]);
 
@@ -27,15 +34,29 @@ export const RecommendationModal = ({ isOpen, onClose, onJumpToReel }) => {
     }
   };
 
+  const togglePreviewPlay = () => {
+    const video = videoPreviewRef.current;
+    if (!video) return;
+    if (video.paused) {
+      video.play().then(() => setIsPlayingPreview(true)).catch(() => {});
+    } else {
+      video.pause();
+      setIsPlayingPreview(false);
+    }
+  };
+
   if (!isOpen) return null;
+
+  const recReel = data?.recommendedReel;
+  const videoSrc = recReel?.cloudinaryUrl || 'https://res.cloudinary.com/ya9jbo7f/video/upload/v1787035469/Video-43343.mp4';
 
   return (
     <div className="modal-backdrop open" onClick={onClose}>
-      <div className="modal-sheet" onClick={(e) => e.stopPropagation()}>
+      <div className="modal-sheet rec-sheet-expanded" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
           <div className="modal-title-wrap">
-            <div className="modal-badge-ai">GROQ LLAMA 3.3 REASONER</div>
-            <h3>AI Tech Recommendation</h3>
+            <div className="modal-badge-ai">⚡ GROQ AI RECOMMENDATION ENGINE</div>
+            <h3>Suggested For You</h3>
           </div>
           <button className="close-modal-btn" onClick={onClose}>
             &times;
@@ -46,55 +67,139 @@ export const RecommendationModal = ({ isOpen, onClose, onJumpToReel }) => {
           {loading && (
             <div className="modal-loading">
               <div className="spinner"></div>
-              <p>Analyzing recent watch sessions & inferring deep interest clusters...</p>
+              <p>Analyzing your likes, watch duration, and topics with Groq LLM...</p>
             </div>
           )}
 
           {error && !loading && (
             <div className="modal-loading">
-              <p style={{ color: '#ff5252' }}>Error: {error}</p>
+              <p style={{ color: '#ff3b30' }}>Error: {error}</p>
               <button className="refresh-profile-btn" onClick={loadRecommendation}>
-                Retry Recommendation
+                Retry Analysis
               </button>
             </div>
           )}
 
           {data && !loading && (
             <div className="rec-result-view">
-              {/* Inferred Interest Banner */}
+              {/* Engagement Signal Breakdown */}
+              <div className="engagement-signal-banner">
+                <div className="signal-pill">
+                  <span className="signal-icon">🔥</span>
+                  <span>Session Dwell: <strong>{sessionDwellSeconds}s</strong></span>
+                </div>
+                <div className="signal-pill">
+                  <span className="signal-icon">❤️</span>
+                  <span>Interactions: <strong>{interactionCount}</strong></span>
+                </div>
+                <div className="signal-pill active-cluster">
+                  <span>Interest: <strong>{data.interestDetected || 'Software Engineering'}</strong></span>
+                </div>
+              </div>
+
+              {/* Inferred Interest Reasoning */}
               <div className="interest-detected-card">
-                <div className="meta-sub">Inferred Primary Interest:</div>
-                <h4>{data.interestDetected || 'Software Engineering & Tech'}</h4>
-                <div className="evidence-box">
-                  <span className="evidence-tag">Session Reasoning:</span>
-                  <p>{data.why}</p>
+                <div className="meta-sub">Why this recommendation is suggested:</div>
+                <p className="interest-why-text">{data.why}</p>
+              </div>
+
+              {/* Main Featured Video Reel Preview */}
+              <div className="recommended-reel-player-card">
+                <div className="player-preview-wrapper" onClick={togglePreviewPlay}>
+                  <video
+                    ref={videoPreviewRef}
+                    className="rec-preview-video"
+                    src={videoSrc}
+                    loop
+                    playsInline
+                    muted
+                  />
+                  <div className={`preview-play-overlay ${isPlayingPreview ? 'playing' : ''}`}>
+                    <svg viewBox="0 0 24 24" fill="currentColor">
+                      {isPlayingPreview ? (
+                        <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" />
+                      ) : (
+                        <path d="M8 5v14l11-7z" />
+                      )}
+                    </svg>
+                  </div>
+                  <span className="preview-badge">▶ Preview Video</span>
+                </div>
+
+                <div className="player-details-column">
+                  <div className="card-top-row">
+                    <span className="category-chip">{data.category || 'Tech'}</span>
+                    {recReel?.topic && <span className="topic-chip">{recReel.topic}</span>}
+                    <span className="difficulty-chip">{data.difficulty || 'Intermediate'}</span>
+                    <span className="confidence-chip">{data.confidence || 'High'} Match</span>
+                  </div>
+
+                  <h3 className="rec-reel-title">{data.recommendedTechReel}</h3>
+                  <p className="rec-reasoning-body">{data.whyThisRecommendation}</p>
+
+                  {recReel?.hashtags && recReel.hashtags.length > 0 && (
+                    <div className="rec-hashtags-list">
+                      {recReel.hashtags.map((ht, idx) => (
+                        <span key={idx} className="rec-hashtag-chip">
+                          {ht.startsWith('#') ? ht : `#${ht}`}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+
+                  <button
+                    className="jump-to-reel-btn"
+                    onClick={() => {
+                      onClose();
+                      onJumpToReel(data.recommendedTechReel);
+                    }}
+                  >
+                    <svg viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M8 5v14l11-7z" />
+                    </svg>
+                    <span>Watch Full Reel in Feed</span>
+                  </button>
                 </div>
               </div>
 
-              {/* Spotlight Recommended Reel Card */}
-              <div className="recommended-card-spotlight">
-                <div className="card-top-row">
-                  <span className="category-chip">{data.category || 'Tech'}</span>
-                  <span className="difficulty-chip">{data.difficulty || 'Intermediate'}</span>
-                  <span className="confidence-chip">{data.confidence || 'High'} Confidence</span>
+              {/* Related Suggested Reels Section */}
+              {data.suggestedReels && data.suggestedReels.length > 0 && (
+                <div className="suggested-reels-section">
+                  <div className="section-heading">
+                    <h4>More Related Tech Reels</h4>
+                    <span>Curated based on your interests</span>
+                  </div>
+
+                  <div className="suggested-reels-grid">
+                    {data.suggestedReels.map((item, idx) => (
+                      <div
+                        key={item._id || idx}
+                        className="suggested-reel-mini-card"
+                        onClick={() => {
+                          onClose();
+                          onJumpToReel(item.title);
+                        }}
+                      >
+                        <div className="mini-video-thumb">
+                          <video
+                            src={item.cloudinaryUrl || 'https://res.cloudinary.com/ya9jbo7f/video/upload/v1787035469/Video-43343.mp4'}
+                            muted
+                            playsInline
+                          />
+                          <div className="mini-play-icon">▶</div>
+                        </div>
+                        <div className="mini-info">
+                          <div className="mini-badges">
+                            <span className="mini-category">{item.category}</span>
+                            <span className="mini-topic">{item.topic || 'Tech'}</span>
+                          </div>
+                          <h5 className="mini-title">{item.title}</h5>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-
-                <h3 className="rec-reel-title">{data.recommendedTechReel}</h3>
-                <p className="rec-reasoning-body">{data.whyThisRecommendation}</p>
-
-                <button
-                  className="jump-to-reel-btn"
-                  onClick={() => {
-                    onClose();
-                    onJumpToReel(data.recommendedTechReel);
-                  }}
-                >
-                  <svg viewBox="0 0 24 24" fill="currentColor" style={{ width: 20, height: 20 }}>
-                    <path d="M8 5v14l11-7z" />
-                  </svg>
-                  <span>Watch This Reel Now</span>
-                </button>
-              </div>
+              )}
             </div>
           )}
         </div>

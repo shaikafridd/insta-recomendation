@@ -100,7 +100,7 @@ const recommendFromSameCategory = async (userId, sourceReel) => {
     triggerSignal: 'like'
   });
 
-  return formatRecommendationResponse({
+  return await formatRecommendationResponse({
     sourceReelTitle: sourceReel.title,
     interestDetected: `${sourceReel.category} Domain Mastery`,
     why: reasonWhy,
@@ -190,7 +190,7 @@ const recommendFromInterestProfile = async (userId, sourceReel = null, triggerSi
     });
   }
 
-  return formatRecommendationResponse({
+  return await formatRecommendationResponse({
     sourceReelTitle: ranking.currentReel,
     interestDetected: ranking.interestDetected,
     why: ranking.why,
@@ -222,7 +222,7 @@ const getRecommendationForUser = async (userId) => {
 
   if (cachedLog) {
     console.log(`[RecommendationEngine] Serving cached recommendation for ${userId} from DB (Saved Groq LLM Call)`);
-    return formatRecommendationResponse({
+    return await formatRecommendationResponse({
       sourceReelTitle: cachedLog.sourceReelTitle,
       interestDetected: `${cachedLog.category} Tech Cluster`,
       why: cachedLog.reasonWhy || `Previously deduced from user engagement (${cachedLog.triggerSignal} signal).`,
@@ -264,7 +264,7 @@ const triggerDebouncedRecommendation = (userId, sourceReel, triggerSignal = 'wat
   userDebounceTimers.set(userId, timer);
 };
 
-const formatRecommendationResponse = ({
+const formatRecommendationResponse = async ({
   sourceReelTitle,
   interestDetected,
   why,
@@ -273,17 +273,49 @@ const formatRecommendationResponse = ({
   whyThisRecommendation,
   difficulty,
   confidence
-}) => ({
-  currentReel: sourceReelTitle || 'General Tech Context',
-  interestDetected: interestDetected || 'Software Engineering',
-  why: why || 'Engagement patterns indicate high technical interest.',
-  recommendedTechReel: recommendedReelTitle || 'Designing High-Throughput Systems',
-  category: category || 'HLD',
-  whyThisRecommendation:
-    whyThisRecommendation || 'Selected for educational substance and depth of content.',
-  difficulty: difficulty || 'Intermediate',
-  confidence: confidence || 'High'
-});
+}) => {
+  // Lookup full reel document for video playback
+  let recommendedReel = null;
+  if (recommendedReelTitle) {
+    recommendedReel = await Reel.findOne({
+      title: { $regex: new RegExp(`^${escapeRegex(recommendedReelTitle)}$`, 'i') }
+    }).lean();
+
+    if (!recommendedReel) {
+      recommendedReel = await Reel.findOne({
+        category: category || 'Other',
+        isHypeBait: false
+      }).lean();
+    }
+  }
+
+  // Fetch 3-4 related suggested reels from catalog for recommendation section
+  const suggestedReels = await Reel.find({
+    category: category || 'Other',
+    ...(recommendedReel && { _id: { $ne: recommendedReel._id } }),
+    isHypeBait: false
+  })
+    .limit(4)
+    .lean();
+
+  return {
+    currentReel: sourceReelTitle || 'General Tech Context',
+    interestDetected: interestDetected || 'Software Engineering',
+    why: why || 'Engagement patterns indicate high technical interest.',
+    recommendedTechReel: recommendedReelTitle || (recommendedReel ? recommendedReel.title : 'Designing High-Throughput Systems'),
+    category: category || 'HLD',
+    whyThisRecommendation:
+      whyThisRecommendation || 'Selected for educational substance and depth of content.',
+    difficulty: difficulty || 'Intermediate',
+    confidence: confidence || 'High',
+    recommendedReel: recommendedReel || null,
+    suggestedReels: suggestedReels || []
+  };
+};
+
+const escapeRegex = (string) => {
+  return string.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+};
 
 module.exports = {
   getRecommendationForUser,

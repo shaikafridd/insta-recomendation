@@ -2,7 +2,7 @@ import React from 'react';
 import { useUser } from '../context/UserContext';
 import { InstagramLogo } from './Icons';
 
-export const Sidebar = ({ onOpenRecommendations, onOpenProfile, onSyncCloudinary }) => {
+export const Sidebar = ({ onOpenRecommendations, onOpenProfile }) => {
   const { userId, setUserId, interactionCount, sessionDwellSeconds, showToast } = useUser();
 
   return (
@@ -56,7 +56,7 @@ export const Sidebar = ({ onOpenRecommendations, onOpenProfile, onSyncCloudinary
             <span>For You Feed</span>
           </button>
 
-          <button className="nav-item" onClick={onOpenRecommendations}>
+          <button className="nav-item rec-highlight-btn" onClick={onOpenRecommendations}>
             <svg viewBox="0 0 24 24" fill="currentColor">
               <path d="M12 2a10 10 0 1010 10A10 10 0 0012 2zm1 15h-2v-6h2zm0-8h-2V7h2z" />
             </svg>
@@ -69,13 +69,6 @@ export const Sidebar = ({ onOpenRecommendations, onOpenProfile, onSyncCloudinary
               <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
             </svg>
             <span>Interest Profile</span>
-          </button>
-
-          <button className="nav-item" onClick={onSyncCloudinary} title="Fetch all reels from Cloudinary media library">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z" />
-            </svg>
-            <span>Sync Cloudinary</span>
           </button>
         </nav>
 
