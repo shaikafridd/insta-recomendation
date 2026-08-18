@@ -9,6 +9,7 @@ const fs = require('fs');
 const reelRoutes = require('./routes/reelRoutes');
 const interactionRoutes = require('./routes/interactionRoutes');
 const recommendationRoutes = require('./routes/recommendationRoutes');
+const profileRoutes = require('./routes/profileRoutes');
 const { getConnectionStatus } = require('./config/db');
 const cache = require('./config/redis');
 const env = require('./config/env');
@@ -252,11 +253,8 @@ app.use('/api/interactions', interactionRoutes);
 app.use('/recommendations', recommendationRoutes);
 app.use('/api/recommendations', recommendationRoutes);
 
-app.use('/interest-profile', recommendationRoutes);
-app.use('/api/interest-profile', recommendationRoutes);
-
-app.use('/api', recommendationRoutes);
-app.use('/', recommendationRoutes);
+app.use('/interest-profile', profileRoutes);
+app.use('/api/interest-profile', profileRoutes);
 
 // ==========================================
 // 6. SPA ROUTING & 404 HANDLER

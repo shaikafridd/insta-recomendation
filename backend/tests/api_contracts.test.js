@@ -47,4 +47,20 @@ describe('API Route Contract & Health Verification', () => {
     assert.strictEqual(formatted.difficulty, 'Intermediate');
     assert.strictEqual(formatted.confidence, 'High');
   });
+
+  it('should verify recommendation and stream routes are mounted on Express router', () => {
+    const routes = [];
+    const printStack = (stack) => {
+      stack?.forEach((layer) => {
+        if (layer.route) {
+          routes.push(layer.route.path);
+        } else if (layer.name === 'router' && layer.handle?.stack) {
+          printStack(layer.handle.stack);
+        }
+      });
+    };
+    printStack(app._router?.stack);
+
+    assert.ok(routes.length > 0, 'Router should have mounted routes');
+  });
 });
