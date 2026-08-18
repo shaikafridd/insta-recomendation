@@ -44,14 +44,14 @@ export const ReelsFeed = ({
             setActiveIndex(index);
             dwellStartRef.current = Date.now();
             activeReelIdRef.current = currentReel?._id;
-          } else {
-            // Scrolled out of view -> calculate dwell & log watch or skip
+          } else if (activeReelIdRef.current && currentReel?._id === activeReelIdRef.current) {
+            // Scrolled out of view -> calculate dwell on the active reel & log watch or skip
             const dwellMs = Date.now() - dwellStartRef.current;
             const previousReelId = currentReel?._id;
 
-            if (dwellMs > 400 && previousReelId) {
-              const eventType = dwellMs < 2500 ? 'skip' : 'watch';
-              const watchPercent = Math.min(100, Math.round((dwellMs / 12000) * 100));
+            if (dwellMs > 1000 && previousReelId) {
+              const eventType = dwellMs < 3000 ? 'skip' : 'watch';
+              const watchPercent = Math.min(100, Math.round((dwellMs / 15000) * 100));
 
               handleInteractionLog({
                 reelId: previousReelId,
@@ -59,6 +59,7 @@ export const ReelsFeed = ({
                 watchPercent,
                 dwellMs
               });
+              activeReelIdRef.current = null;
             }
           }
         });
