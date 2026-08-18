@@ -37,13 +37,31 @@ export const ReelCard = ({
   const [indicatorIcon, setIndicatorIcon] = useState('play');
   const tapTimeoutRef = useRef(null);
 
-  // Pick video source (use sample MP4 if cloudinary is placeholder)
-  const videoSrc =
+  // Pick video source (use sample MP4 if cloudinary is placeholder or on error)
+  const initialVideoSrc =
     reel.cloudinaryUrl &&
     reel.cloudinaryUrl.startsWith('http') &&
     !reel.cloudinaryUrl.includes('demo/video')
       ? reel.cloudinaryUrl
       : SAMPLE_VIDEOS[index % SAMPLE_VIDEOS.length];
+
+  const [videoSrc, setVideoSrc] = useState(initialVideoSrc);
+
+  useEffect(() => {
+    if (reel.cloudinaryUrl && reel.cloudinaryUrl.startsWith('http') && !reel.cloudinaryUrl.includes('demo/video')) {
+      setVideoSrc(reel.cloudinaryUrl);
+    } else {
+      setVideoSrc(SAMPLE_VIDEOS[index % SAMPLE_VIDEOS.length]);
+    }
+  }, [reel.cloudinaryUrl, index]);
+
+  const handleVideoError = () => {
+    console.warn(`[Video Player] Error loading ${videoSrc}. Recovering with fallback stream.`);
+    const fallback = SAMPLE_VIDEOS[index % SAMPLE_VIDEOS.length];
+    if (videoSrc !== fallback) {
+      setVideoSrc(fallback);
+    }
+  };
 
   const authorHandle = getHandleForCategory(reel.category);
 
@@ -183,6 +201,7 @@ export const ReelCard = ({
           loop
           playsInline
           muted={isMuted}
+          onError={handleVideoError}
           onTimeUpdate={handleTimeUpdate}
           onEnded={handleEnded}
         />
