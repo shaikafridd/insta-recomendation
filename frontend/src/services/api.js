@@ -2,7 +2,7 @@
  * API Client for Reels Recommender Backend
  */
 
-const API_BASE = ''; // Uses Vite proxy in development or same-origin in production
+const API_BASE = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '');
 
 export const fetchReels = async (limit = 20) => {
   try {
