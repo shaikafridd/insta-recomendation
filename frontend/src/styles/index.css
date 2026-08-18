@@ -16,17 +16,17 @@
   --text-muted: #64748b;
   --text-light: #ffffff;
 
-  /* Orange Brand Palette (WCAG AA compliant contrast) */
-  --orange-primary: #d95700;
+  /* Orange Brand Palette (WCAG AA compliant contrast >= 4.5:1) */
+  --orange-primary: #c2410c;
   --orange-vibrant: #ff6b00;
-  --orange-hover: #b84900;
-  --orange-dark: #8c3600;
+  --orange-hover: #9a3412;
+  --orange-dark: #7c2d12;
   --orange-light: #fff7ed;
-  --orange-gradient: linear-gradient(135deg, #ff6b00 0%, #ff8800 50%, #d95700 100%);
-  --orange-gradient-soft: linear-gradient(135deg, rgba(255, 107, 0, 0.12) 0%, rgba(255, 136, 0, 0.05) 100%);
-  --orange-glow: 0 8px 24px rgba(217, 87, 0, 0.28);
-  --orange-pill-bg: rgba(217, 87, 0, 0.12);
-  --orange-border: rgba(217, 87, 0, 0.35);
+  --orange-gradient: linear-gradient(135deg, #ff6b00 0%, #ea580c 50%, #c2410c 100%);
+  --orange-gradient-soft: linear-gradient(135deg, rgba(255, 107, 0, 0.12) 0%, rgba(234, 88, 12, 0.05) 100%);
+  --orange-glow: 0 8px 24px rgba(194, 65, 12, 0.28);
+  --orange-pill-bg: rgba(194, 65, 12, 0.12);
+  --orange-border: rgba(194, 65, 12, 0.35);
 
   --accent-blue: #0369a1;
   --accent-red: #dc2626;

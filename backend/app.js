@@ -1,6 +1,11 @@
 const express = require('express');
 const cors = require('cors');
 const morgan = require('morgan');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
+const path = require('path');
+const fs = require('fs');
+
 const reelRoutes = require('./routes/reelRoutes');
 const interactionRoutes = require('./routes/interactionRoutes');
 const recommendationRoutes = require('./routes/recommendationRoutes');
@@ -10,13 +15,59 @@ const env = require('./config/env');
 
 const app = express();
 
-const path = require('path');
+// ==========================================
+// 1. SECURITY & SANITIZATION MIDDLEWARE
+// ==========================================
 
-// Log redaction to prevent accidental API key leaks in logs
-const sanitizeLog = (str) => (typeof str === 'string' ? str.replace(/gsk_[a-zA-Z0-9_-]+/g, '[REDACTED_GROQ_KEY]') : str);
+// Configure Helmet for secure HTTP headers (XSS, Clickjacking, MIME sniffing protection)
+app.use(
+  helmet({
+    contentSecurityPolicy: false, // Disabled to allow external media CDN video streaming
+    crossOriginResourcePolicy: { policy: 'cross-origin' },
+    crossOriginEmbedderPolicy: false
+  })
+);
 
-// Global Middlewares
-app.use(cors());
+// Rate Limiter: Prevent brute-force and DoS attacks
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes window
+  max: 300, // Max 300 requests per IP per window
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    success: false,
+    error: 'Too many requests from this IP, please try again later.'
+  }
+});
+app.use('/interactions', apiLimiter);
+app.use('/recommendations', apiLimiter);
+
+// NoSQL Injection Sanitizer: Recursively strip leading '$' and '.' from object keys
+const sanitizeInput = (obj) => {
+  if (!obj || typeof obj !== 'object') return obj;
+  if (Array.isArray(obj)) return obj.map(sanitizeInput);
+  
+  const sanitized = {};
+  for (const [key, value] of Object.entries(obj)) {
+    const cleanKey = key.replace(/^\$|\./g, '');
+    sanitized[cleanKey] = sanitizeInput(value);
+  }
+  return sanitized;
+};
+
+app.use((req, res, next) => {
+  if (req.body) req.body = sanitizeInput(req.body);
+  if (req.query) req.query = sanitizeInput(req.query);
+  if (req.params) req.params = sanitizeInput(req.params);
+  next();
+});
+
+// Log Redaction: Prevent sensitive API keys from appearing in stdout/logs
+const sanitizeLog = (str) =>
+  typeof str === 'string' ? str.replace(/gsk_[a-zA-Z0-9_-]+/g, '[REDACTED_GROQ_KEY]') : str;
+
+// Standard CORS & Body Parsers
+app.use(cors({ origin: '*', methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'] }));
 app.use(
   morgan((tokens, req, res) => {
     const raw = [
@@ -31,17 +82,19 @@ app.use(
     return sanitizeLog(raw);
   })
 );
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: '2mb' }));
+app.use(express.urlencoded({ extended: true, limit: '2mb' }));
 
-const fs = require('fs');
-
-// Serve frontend static assets (check dist first, fallback to root)
+// ==========================================
+// 2. STATIC ASSETS & FRONTEND SERVING
+// ==========================================
 const distPath = path.join(__dirname, '../frontend/dist');
 const staticPath = fs.existsSync(distPath) ? distPath : path.join(__dirname, '../frontend');
 app.use(express.static(staticPath));
 
-// Health and Status Check
+// ==========================================
+// 3. HEALTH CHECK & TELEMETRY
+// ==========================================
 app.get('/health', (req, res) => {
   res.status(200).json({
     status: 'online',
@@ -55,12 +108,16 @@ app.get('/health', (req, res) => {
   });
 });
 
-// API Routes
+// ==========================================
+// 4. API ROUTES
+// ==========================================
 app.use('/reels', reelRoutes);
 app.use('/interactions', interactionRoutes);
 app.use('/', recommendationRoutes);
 
-// Fallback for frontend SPA route or 404
+// ==========================================
+// 5. SPA ROUTING & 404 HANDLER
+// ==========================================
 app.use((req, res, next) => {
   if (req.method === 'GET' && req.accepts('html')) {
     const indexPath = fs.existsSync(path.join(distPath, 'index.html'))
@@ -74,12 +131,14 @@ app.use((req, res, next) => {
   });
 });
 
-// Centralized Error Handling Middleware
+// ==========================================
+// 6. GLOBAL CENTRALIZED ERROR HANDLER
+// ==========================================
 app.use((err, req, res, next) => {
-  console.error('[Error Middleware]:', err);
-
   const statusCode = err.statusCode || 500;
   const message = err.message || 'Internal Server Error';
+
+  console.error(`[Error Handler] ${req.method} ${req.originalUrl} - Status ${statusCode}:`, message);
 
   res.status(statusCode).json({
     success: false,
