@@ -4,20 +4,11 @@ const { RecommendationLog } = require('../models/RecommendationLog');
 const profileService = require('./profileService');
 const groqService = require('./groqService');
 
-const TECH_CATEGORIES = [
-  'AI',
-  'DSA',
-  'JavaScript',
-  'HLD',
-  'Cybersecurity',
-  'Cloud',
-  'Hardware',
-  'Career',
-  'Other'
-];
+const { CATEGORIES, CACHE_CONFIG } = require('../constants');
 
-const CACHE_VALIDITY_MS = 24 * 60 * 60 * 1000; // 24 hours cache window in DB
-const RECENT_REC_EXCLUSION_DAYS = 7;
+const TECH_CATEGORIES = CATEGORIES;
+const CACHE_VALIDITY_MS = CACHE_CONFIG.DB_REC_VALIDITY_MS;
+const RECENT_REC_EXCLUSION_DAYS = CACHE_CONFIG.EXCLUSION_WINDOW_DAYS;
 
 // In-memory debounce map for user recommendation triggers (5 seconds window)
 const userDebounceTimers = new Map();
@@ -100,7 +91,7 @@ const recommendFromSameCategory = async (userId, sourceReel) => {
     triggerSignal: 'like'
   });
 
-  return await formatRecommendationResponse({
+  const result = await formatRecommendationResponse({
     sourceReelTitle: sourceReel.title,
     interestDetected: `${sourceReel.category} Domain Mastery`,
     why: reasonWhy,
@@ -110,6 +101,9 @@ const recommendFromSameCategory = async (userId, sourceReel) => {
     difficulty: logDoc.difficulty,
     confidence: logDoc.confidence
   });
+
+  broadcastRecommendationToUser(userId, result);
+  return result;
 };
 
 /**
@@ -190,7 +184,7 @@ const recommendFromInterestProfile = async (userId, sourceReel = null, triggerSi
     });
   }
 
-  return await formatRecommendationResponse({
+  const result = await formatRecommendationResponse({
     sourceReelTitle: ranking.currentReel,
     interestDetected: ranking.interestDetected,
     why: ranking.why,
@@ -200,6 +194,9 @@ const recommendFromInterestProfile = async (userId, sourceReel = null, triggerSi
     difficulty: ranking.difficulty,
     confidence: ranking.confidence
   });
+
+  broadcastRecommendationToUser(userId, result);
+  return result;
 };
 
 /**
@@ -317,10 +314,56 @@ const escapeRegex = (string) => {
   return string.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
 };
 
+// --- Server-Sent Events (SSE) Live Broadcast Pipeline ---
+const sseClients = new Map();
+
+/**
+ * Register an active SSE response client for a given userId
+ * @param {string} userId
+ * @param {import('express').Response} res
+ */
+const registerSseClient = (userId, res) => {
+  if (!sseClients.has(userId)) {
+    sseClients.set(userId, new Set());
+  }
+  sseClients.get(userId).add(res);
+
+  res.on('close', () => {
+    const clients = sseClients.get(userId);
+    if (clients) {
+      clients.delete(res);
+      if (clients.size === 0) {
+        sseClients.delete(userId);
+      }
+    }
+  });
+};
+
+/**
+ * Broadcast real-time recommendation event to all active SSE subscribers for a user
+ * @param {string} userId
+ * @param {Object} recommendationData
+ */
+const broadcastRecommendationToUser = (userId, recommendationData) => {
+  const clients = sseClients.get(userId);
+  if (!clients || clients.size === 0) return;
+
+  const payload = `data: ${JSON.stringify({ type: 'recommendation_update', data: recommendationData })}\n\n`;
+  for (const client of clients) {
+    try {
+      client.write(payload);
+    } catch (e) {
+      // Disconnected client handled on close
+    }
+  }
+};
+
 module.exports = {
   getRecommendationForUser,
   recommendFromSameCategory,
   recommendFromInterestProfile,
   triggerDebouncedRecommendation,
+  registerSseClient,
+  broadcastRecommendationToUser,
   TECH_CATEGORIES
 };

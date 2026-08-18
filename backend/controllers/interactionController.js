@@ -11,8 +11,13 @@ const {
   triggerDebouncedRecommendation
 } = require('../services/recommendationService');
 
+const AppError = require('../utils/AppError');
+
 /**
  * Log a user interaction with a reel and conditionally trigger engagement-weighted recommendations
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ * @param {import('express').NextFunction} next
  */
 const logInteraction = async (req, res, next) => {
   try {
@@ -22,10 +27,7 @@ const logInteraction = async (req, res, next) => {
     // 1. Verify reel exists
     const reel = await Reel.findById(reelId);
     if (!reel) {
-      return res.status(404).json({
-        success: false,
-        error: `Reel with ID ${reelId} was not found`
-      });
+      return next(AppError.notFound(`Reel with ID ${reelId} was not found`));
     }
 
     // 2. Save Interaction Record

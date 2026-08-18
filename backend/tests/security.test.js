@@ -72,4 +72,35 @@ describe('Security & Input Sanitization Suite', () => {
     assert.strictEqual(cleaned.userId, 'student_99');
     assert.strictEqual(Object.keys(cleaned).includes('$gt'), false);
   });
+
+  it('should strip malicious script tags and javascript: protocol vectors', () => {
+    const sanitizeString = (str) =>
+      typeof str === 'string'
+        ? str
+            .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+            .replace(/<iframe\b[^<]*(?:(?!<\/iframe>)<[^<]*)*<\/iframe>/gi, '')
+            .replace(/javascript:/gi, '')
+            .replace(/onload\s*=/gi, '')
+            .replace(/onerror\s*=/gi, '')
+        : str;
+
+    const xssAttack = '<script>alert("hack")</script>Binary Search Trees';
+    assert.strictEqual(sanitizeString(xssAttack), 'Binary Search Trees');
+
+    const protocolAttack = 'javascript:evil()';
+    assert.strictEqual(sanitizeString(protocolAttack), 'evil()');
+  });
+
+  it('should verify AppError provides structured operational status codes and error objects', () => {
+    const AppError = require('../utils/AppError');
+    const badReq = AppError.badRequest('Invalid input field', { field: 'userId' });
+
+    assert.strictEqual(badReq.statusCode, 400);
+    assert.strictEqual(badReq.isOperational, true);
+    assert.strictEqual(badReq.details.field, 'userId');
+
+    const notFound = AppError.notFound('Reel missing');
+    assert.strictEqual(notFound.statusCode, 404);
+    assert.strictEqual(notFound.isOperational, true);
+  });
 });

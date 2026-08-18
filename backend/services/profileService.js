@@ -2,7 +2,9 @@ const { Interaction } = require('../models/Interaction');
 const cache = require('../config/redis');
 const groqService = require('./groqService');
 
-const PROFILE_CACHE_TTL_SECONDS = 3600; // 1 hour TTL
+const { CACHE_CONFIG } = require('../constants');
+
+const PROFILE_CACHE_TTL_SECONDS = CACHE_CONFIG.REDIS_PROFILE_TTL_SECONDS; // 1 hour TTL
 const RECENT_INTERACTIONS_LIMIT = 15;
 
 /**

@@ -1,4 +1,5 @@
 const Groq = require('groq-sdk');
+const { CATEGORIES, DIFFICULTIES } = require('../constants');
 
 const GROQ_MODEL = process.env.GROQ_MODEL || 'openai/gpt-oss-120b';
 const FALLBACK_MODEL = 'qwen/qwen3.6-27b';
@@ -123,30 +124,16 @@ Generate high-quality educational metadata for this reel. Respond ONLY with the 
 
     const parsed = safeParseJSON(result);
     if (parsed && parsed.title) {
-      const validCategories = [
-        'AI',
-        'DSA',
-        'JavaScript',
-        'HLD',
-        'Cybersecurity',
-        'Cloud',
-        'Hardware',
-        'Career',
-        'Entertainment',
-        'Other'
-      ];
-      const validDifficulties = ['Beginner', 'Intermediate', 'Advanced'];
-
       return {
         title: parsed.title,
         topic: parsed.topic || 'General Tech',
-        category: validCategories.includes(parsed.category) ? parsed.category : 'Other',
+        category: CATEGORIES.includes(parsed.category) ? parsed.category : 'Other',
         caption: parsed.caption || '',
         hashtags: Array.isArray(parsed.hashtags)
-          ? parsed.hashtags.map((h) => (h.startsWith('#') ? h : `#${h}`))
-          : [`#${parsed.category?.toLowerCase() || 'tech'}`],
-        difficulty: validDifficulties.includes(parsed.difficulty) ? parsed.difficulty : 'Intermediate',
-        isHypeBait: parsed.isHypeBait === true
+          ? parsed.hashtags
+          : [`#${(parsed.category || 'tech').toLowerCase()}`, '#coding', '#learn'],
+        difficulty: DIFFICULTIES.includes(parsed.difficulty) ? parsed.difficulty : 'Intermediate',
+        isHypeBait: Boolean(parsed.isHypeBait)
       };
     }
   } catch (error) {

@@ -34,6 +34,7 @@ const SAMPLE_VIDEOS = [
 export const ReelCard = ({
   reel,
   index,
+  activeIndex,
   isActive,
   onInteraction,
   onOpenRecommendations,
@@ -41,6 +42,7 @@ export const ReelCard = ({
 }) => {
   const { isMuted, toggleMute, showToast } = useUser();
   const videoRef = useRef(null);
+  const isMounted = activeIndex === undefined || Math.abs(index - activeIndex) <= 1;
   const [isPlaying, setIsPlaying] = useState(false);
   const [isLiked, setIsLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(() => Math.floor(Math.random() * 850 + 150));
@@ -236,20 +238,29 @@ export const ReelCard = ({
         role="region"
         aria-label="Video Player Area. Click to Play/Pause, Double Click to Like."
       >
-        <video
-          ref={videoRef}
-          className="reel-video"
-          src={videoSrc}
-          loop
-          playsInline
-          muted={isMuted}
-          onError={handleVideoError}
-          onTimeUpdate={handleTimeUpdate}
-          onEnded={handleEnded}
-          aria-label={reel.title}
-        >
-          <track kind="captions" srcLang="en" label="English" default />
-        </video>
+        {isMounted ? (
+          <video
+            ref={videoRef}
+            className="reel-video"
+            src={videoSrc}
+            loop
+            playsInline
+            muted={isMuted}
+            onError={handleVideoError}
+            onTimeUpdate={handleTimeUpdate}
+            onEnded={handleEnded}
+            aria-label={reel.title}
+          >
+            <track kind="captions" srcLang="en" label="English" default />
+          </video>
+        ) : (
+          <div className="reel-video-placeholder" aria-hidden="true">
+            <div className="placeholder-center">
+              <span className="placeholder-tag">{reel.category}</span>
+              <p className="placeholder-title-preview">{reel.title}</p>
+            </div>
+          </div>
+        )}
 
         {/* Play/Pause Center Indicator */}
         <div

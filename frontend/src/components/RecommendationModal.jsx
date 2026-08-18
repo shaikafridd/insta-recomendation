@@ -15,7 +15,13 @@ const GOOGLE_CDN_STREAMS = [
  * Accessible dialog displaying personalized AI suggestions with interactive video player.
  */
 export const RecommendationModal = ({ isOpen, onClose, onJumpToReel }) => {
-  const { userId, interactionCount, sessionDwellSeconds } = useUser();
+  const {
+    userId,
+    interactionCount,
+    sessionDwellSeconds,
+    latestRecommendation,
+    setHasNewRecNotification
+  } = useUser();
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState(null);
   const [error, setError] = useState(null);
@@ -38,14 +44,19 @@ export const RecommendationModal = ({ isOpen, onClose, onJumpToReel }) => {
 
   useEffect(() => {
     if (isOpen) {
-      loadRecommendation();
+      setHasNewRecNotification(false);
+      if (latestRecommendation) {
+        setData(latestRecommendation);
+      } else {
+        loadRecommendation();
+      }
     } else {
       setIsPlayingPreview(false);
       if (videoPreviewRef.current) {
         videoPreviewRef.current.pause();
       }
     }
-  }, [isOpen, loadRecommendation]);
+  }, [isOpen, latestRecommendation, loadRecommendation, setHasNewRecNotification]);
 
   useEffect(() => {
     if (data?.recommendedReel?.cloudinaryUrl) {

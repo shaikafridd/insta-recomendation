@@ -38,7 +38,47 @@ const getRecommendation = async (req, res, next) => {
   }
 };
 
+/**
+ * GET /recommendations/stream/:userId
+ * Server-Sent Events (SSE) stream for live AI recommendation updates
+ */
+const streamRecommendations = async (req, res, next) => {
+  try {
+    const { userId } = req.validatedParams;
+
+    // Set SSE HTTP response headers
+    res.writeHead(200, {
+      'Content-Type': 'text/event-stream',
+      'Cache-Control': 'no-cache',
+      Connection: 'keep-alive',
+      'X-Accel-Buffering': 'no'
+    });
+
+    // Send initial connection handshake
+    res.write(`data: ${JSON.stringify({ type: 'connected', userId, timestamp: new Date() })}\n\n`);
+
+    // Register active SSE client
+    recommendationService.registerSseClient(userId, res);
+
+    // Keep connection alive with a 30s heartbeat comment
+    const heartbeatTimer = setInterval(() => {
+      try {
+        res.write(': heartbeat\n\n');
+      } catch (err) {
+        clearInterval(heartbeatTimer);
+      }
+    }, 30000);
+
+    req.on('close', () => {
+      clearInterval(heartbeatTimer);
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   getInterestProfile,
-  getRecommendation
+  getRecommendation,
+  streamRecommendations
 };

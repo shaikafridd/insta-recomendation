@@ -1,15 +1,17 @@
 const { z } = require('zod');
-const { CATEGORIES, DIFFICULTIES } = require('../models/Reel');
-const { EVENT_TYPES } = require('../models/Interaction');
+const { CATEGORIES, DIFFICULTIES, EVENT_TYPES } = require('../constants');
 
-// Custom validator for MongoDB ObjectId string
+// Custom validator for MongoDB ObjectId string (24 hexadecimal characters)
 const objectIdRegex = /^[0-9a-fA-F]{24}$/;
 
+/**
+ * Zod Schema for Reel creation and validation
+ */
 const createReelSchema = z.object({
-  title: z.string().min(2, 'Title must be at least 2 characters'),
-  topic: z.string().optional().default('General Tech'),
-  caption: z.string().optional().default(''),
-  transcript: z.string().optional().default(''),
+  title: z.string().trim().min(2, 'Title must be at least 2 characters'),
+  topic: z.string().trim().optional().default('General Tech'),
+  caption: z.string().trim().optional().default(''),
+  transcript: z.string().trim().optional().default(''),
   category: z.enum(CATEGORIES, {
     errorMap: () => ({ message: `Category must be one of: ${CATEGORIES.join(', ')}` })
   }),
@@ -19,7 +21,7 @@ const createReelSchema = z.object({
     .optional()
     .transform((val) => {
       if (!val) return [];
-      if (Array.isArray(val)) return val;
+      if (Array.isArray(val)) return val.map((t) => t.trim()).filter(Boolean);
       return val.split(',').map((t) => t.trim()).filter(Boolean);
     }),
   hashtags: z
@@ -27,7 +29,7 @@ const createReelSchema = z.object({
     .optional()
     .transform((val) => {
       if (!val) return [];
-      if (Array.isArray(val)) return val;
+      if (Array.isArray(val)) return val.map((t) => t.trim()).filter(Boolean);
       return val.split(',').map((t) => t.trim()).filter(Boolean);
     }),
   isHypeBait: z
@@ -42,9 +44,12 @@ const createReelSchema = z.object({
   cloudinaryPublicId: z.string().optional()
 });
 
+/**
+ * Zod Schema for User Telemetry & Interaction logging
+ */
 const createInteractionSchema = z.object({
-  userId: z.string().min(1, 'User ID is required'),
-  reelId: z.string().regex(objectIdRegex, 'Invalid Reel ID format (must be 24-char ObjectId)'),
+  userId: z.string().trim().min(1, 'User ID is required'),
+  reelId: z.string().trim().regex(objectIdRegex, 'Invalid Reel ID format (must be 24-char ObjectId)'),
   eventType: z.enum(EVENT_TYPES, {
     errorMap: () => ({ message: `EventType must be one of: ${EVENT_TYPES.join(', ')}` })
   }),
@@ -52,26 +57,37 @@ const createInteractionSchema = z.object({
     .union([z.number(), z.string()])
     .optional()
     .transform((val) => (val !== undefined && val !== null ? Number(val) : 0))
-    .refine((val) => !isNaN(val) && val >= 0, { message: 'watchPercent must be a positive number' }),
+    .refine((val) => !isNaN(val) && val >= 0 && val <= 1000, {
+      message: 'watchPercent must be a positive number between 0 and 1000'
+    }),
   dwellMs: z
     .union([z.number(), z.string()])
     .optional()
     .transform((val) => (val !== undefined && val !== null ? Number(val) : 0))
-    .refine((val) => !isNaN(val) && val >= 0, { message: 'dwellMs must be a positive number' }),
+    .refine((val) => !isNaN(val) && val >= 0, {
+      message: 'dwellMs must be a positive number'
+    }),
   replayCount: z
     .union([z.number(), z.string()])
     .optional()
     .transform((val) => (val !== undefined && val !== null ? Number(val) : 0))
-    .refine((val) => !isNaN(val) && val >= 0, { message: 'replayCount must be a positive number' }),
+    .refine((val) => !isNaN(val) && val >= 0, {
+      message: 'replayCount must be a positive number'
+    }),
   timestamp: z.string().datetime().optional()
 });
 
+/**
+ * Zod Schema for User ID URL parameters
+ */
 const userIdParamSchema = z.object({
-  userId: z.string().min(1, 'User ID parameter is required')
+  userId: z.string().trim().min(1, 'User ID parameter is required')
 });
 
 /**
- * Express middleware for validating request bodies against a Zod schema
+ * Higher-order middleware for validating request bodies against a Zod schema
+ * @param {import('zod').ZodSchema} schema
+ * @returns {import('express').RequestHandler}
  */
 const validateBody = (schema) => (req, res, next) => {
   try {
@@ -93,7 +109,9 @@ const validateBody = (schema) => (req, res, next) => {
 };
 
 /**
- * Express middleware for validating request params
+ * Higher-order middleware for validating request URL parameters
+ * @param {import('zod').ZodSchema} schema
+ * @returns {import('express').RequestHandler}
  */
 const validateParams = (schema) => (req, res, next) => {
   try {

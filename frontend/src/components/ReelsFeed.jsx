@@ -129,6 +129,7 @@ export const ReelsFeed = ({
           key={reel._id || `reel_${index}`}
           reel={reel}
           index={index}
+          activeIndex={activeIndex}
           isActive={activeIndex === index}
           onInteraction={handleInteractionLog}
           onOpenRecommendations={onOpenRecommendations}

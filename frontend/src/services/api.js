@@ -56,6 +56,10 @@ export const logInteraction = async ({ userId, reelId, eventType, watchPercent, 
   }
 };
 
+export const getRecommendationStreamUrl = (userId) => {
+  return `${API_BASE}/recommendations/stream/${encodeURIComponent(userId)}`;
+};
+
 export const fetchRecommendation = async (userId) => {
   const res = await fetch(`${API_BASE}/recommendations/${userId}`);
   if (!res.ok) throw new Error(`HTTP ${res.status}`);

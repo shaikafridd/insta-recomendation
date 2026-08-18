@@ -79,4 +79,47 @@ describe('System Integration & Telemetry Analytics Suite', () => {
     assert.strictEqual(eligible.length, 1);
     assert.strictEqual(eligible[0]._id, 'reel_2');
   });
+
+  // 5. Test Server-Sent Events (SSE) Real-Time Broadcast Pipeline
+  it('should register SSE client and broadcast structured recommendation payload', () => {
+    const sseClients = new Map();
+    const registerClient = (userId, mockRes) => {
+      if (!sseClients.has(userId)) sseClients.set(userId, new Set());
+      sseClients.get(userId).add(mockRes);
+      mockRes.onClose = () => {
+        const set = sseClients.get(userId);
+        if (set) {
+          set.delete(mockRes);
+          if (set.size === 0) sseClients.delete(userId);
+        }
+      };
+    };
+
+    const writtenMessages = [];
+    const mockRes = {
+      write: (chunk) => writtenMessages.push(chunk),
+      onClose: null
+    };
+
+    registerClient('student_101', mockRes);
+    assert.strictEqual(sseClients.get('student_101').size, 1);
+
+    // Broadcast
+    const payload = {
+      type: 'recommendation_update',
+      data: { recommendedTechReel: 'Distributed Caching in Node.js' }
+    };
+
+    const clientSet = sseClients.get('student_101');
+    for (const c of clientSet) {
+      c.write(`data: ${JSON.stringify(payload)}\n\n`);
+    }
+
+    assert.strictEqual(writtenMessages.length, 1);
+    assert.ok(writtenMessages[0].startsWith('data: {"type":"recommendation_update"'));
+
+    // Trigger close
+    mockRes.onClose();
+    assert.strictEqual(sseClients.has('student_101'), false);
+  });
 });

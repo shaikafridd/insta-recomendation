@@ -49,6 +49,43 @@
   object-fit: cover;
 }
 
+/* Virtualized Video Placeholder */
+.reel-video-placeholder {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, #090d16 0%, #171d2b 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.placeholder-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  text-align: center;
+  opacity: 0.6;
+}
+
+.placeholder-tag {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--orange-primary);
+  background: rgba(255, 107, 0, 0.15);
+  padding: 4px 10px;
+  border-radius: 9999px;
+  text-transform: uppercase;
+}
+
+.placeholder-title-preview {
+  font-size: 0.95rem;
+  color: #94a3b8;
+  font-weight: 500;
+  max-width: 240px;
+}
+
 /* Play/Pause Center Indicator */
 .play-pause-indicator {
   position: absolute;

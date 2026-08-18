@@ -8,7 +8,14 @@ import { InstagramLogo } from './Icons';
  * Fully WCAG 2.1 accessible with ARIA landmarks and labels.
  */
 export const Sidebar = ({ onOpenRecommendations, onOpenProfile }) => {
-  const { userId, setUserId, interactionCount, sessionDwellSeconds, showToast } = useUser();
+  const {
+    userId,
+    setUserId,
+    interactionCount,
+    sessionDwellSeconds,
+    showToast,
+    hasNewRecNotification
+  } = useUser();
 
   return (
     <>
@@ -27,6 +34,7 @@ export const Sidebar = ({ onOpenRecommendations, onOpenProfile }) => {
           >
             <span className="ai-sparkle" aria-hidden="true">✨</span>
             <span>AI Rec</span>
+            {hasNewRecNotification && <span className="pulse-dot-mini" aria-hidden="true"></span>}
           </button>
           <button
             type="button"

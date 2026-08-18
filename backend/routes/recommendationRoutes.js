@@ -5,6 +5,16 @@ const { userIdParamSchema, validateParams } = require('../validators/schemas');
 const router = express.Router();
 
 /**
+ * @route   GET /recommendations/stream/:userId
+ * @desc    Server-Sent Events (SSE) live recommendation stream
+ */
+router.get(
+  '/recommendations/stream/:userId',
+  validateParams(userIdParamSchema),
+  recommendationController.streamRecommendations
+);
+
+/**
  * @route   GET /recommendations/:userId
  * @desc    Generate structured recommendation based on inferred interest
  */

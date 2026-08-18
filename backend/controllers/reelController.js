@@ -1,9 +1,13 @@
 const { Reel } = require('../models/Reel');
 const cloudinaryService = require('../services/cloudinaryService');
 const groqService = require('../services/groqService');
+const AppError = require('../utils/AppError');
 
 /**
  * Upload reel to Cloudinary and create Reel document in MongoDB
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ * @param {import('express').NextFunction} next
  */
 const createReel = async (req, res, next) => {
   try {
@@ -22,10 +26,9 @@ const createReel = async (req, res, next) => {
     }
 
     if (!cloudinaryUrl || !cloudinaryPublicId) {
-      return res.status(400).json({
-        success: false,
-        error: 'A video file or valid cloudinaryUrl & cloudinaryPublicId must be provided'
-      });
+      return next(
+        AppError.badRequest('A video file or valid cloudinaryUrl & cloudinaryPublicId must be provided')
+      );
     }
 
     const reel = await Reel.create({
@@ -156,7 +159,7 @@ const getReelById = async (req, res, next) => {
     const { id } = req.params;
     const reel = await Reel.findById(id);
     if (!reel) {
-      return res.status(404).json({ success: false, error: 'Reel not found' });
+      return next(AppError.notFound(`Reel with ID ${id} was not found`));
     }
     return res.status(200).json({ success: true, data: reel });
   } catch (error) {
@@ -172,7 +175,7 @@ const streamVideo = async (req, res, next) => {
     const { id } = req.params;
     const reel = await Reel.findById(id).lean();
     if (!reel || !reel.cloudinaryUrl) {
-      return res.status(404).json({ success: false, error: 'Reel or video URL not found' });
+      return next(AppError.notFound(`Reel or video URL not found for ID ${id}`));
     }
 
     const videoUrl = reel.cloudinaryUrl;
