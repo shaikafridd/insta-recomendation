@@ -11,16 +11,16 @@ import {
 } from './Icons';
 
 const SAMPLE_VIDEOS = [
-  'https://res.cloudinary.com/ya9jbo7f/video/upload/v1787035469/Video-43343.mp4',
-  'https://res.cloudinary.com/ya9jbo7f/video/upload/v1787035462/Video-42124.mp4',
-  'https://res.cloudinary.com/ya9jbo7f/video/upload/v1787035460/Video-10581.mp4',
-  'https://res.cloudinary.com/ya9jbo7f/video/upload/v1787035457/Video-63457.mp4',
-  'https://res.cloudinary.com/ya9jbo7f/video/upload/v1787035458/Video-47797.mp4',
-  'https://res.cloudinary.com/ya9jbo7f/video/upload/v1787035456/Video-87899.mp4',
-  'https://res.cloudinary.com/ya9jbo7f/video/upload/v1787035455/Video-5949.mp4',
   'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
   'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4',
-  'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4'
+  'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4',
+  'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyBlazes.mp4',
+  'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltdowns.mp4',
+  'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/Sintel.mp4',
+  'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/SubaruOutbackOnStreetAndDirt.mp4',
+  'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4',
+  'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/WeAreGoingOnBullrun.mp4',
+  'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/WhatCarCanYouGetForAGrand.mp4'
 ];
 
 export const ReelCard = ({
@@ -40,6 +40,7 @@ export const ReelCard = ({
   const [showPlayIndicator, setShowPlayIndicator] = useState(false);
   const [indicatorIcon, setIndicatorIcon] = useState('play');
   const tapTimeoutRef = useRef(null);
+  const [errorCount, setErrorCount] = useState(0);
 
   // Pick video source (use sample MP4 if cloudinary is placeholder or on error)
   const initialVideoSrc =
@@ -54,17 +55,20 @@ export const ReelCard = ({
   useEffect(() => {
     if (reel.cloudinaryUrl && reel.cloudinaryUrl.startsWith('http') && !reel.cloudinaryUrl.includes('demo/video')) {
       setVideoSrc(reel.cloudinaryUrl);
+      setErrorCount(0);
     } else {
       setVideoSrc(SAMPLE_VIDEOS[index % SAMPLE_VIDEOS.length]);
     }
   }, [reel.cloudinaryUrl, index]);
 
   const handleVideoError = () => {
-    console.warn(`[Video Player] Error loading ${videoSrc}. Recovering with fallback stream.`);
-    const fallback = SAMPLE_VIDEOS[index % SAMPLE_VIDEOS.length];
-    if (videoSrc !== fallback) {
-      setVideoSrc(fallback);
-    }
+    if (errorCount >= 2) return; // Prevent repeated retry loops
+    const nextCount = errorCount + 1;
+    setErrorCount(nextCount);
+
+    const googleCdnFallback = SAMPLE_VIDEOS[index % SAMPLE_VIDEOS.length];
+    console.warn(`[Video Player] Network stream error. Switching to high-speed CDN stream.`);
+    setVideoSrc(googleCdnFallback);
   };
 
   const authorHandle = getHandleForCategory(reel.category);

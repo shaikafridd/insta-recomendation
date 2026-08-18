@@ -164,9 +164,46 @@ const getReelById = async (req, res, next) => {
   }
 };
 
+/**
+ * Stream video through backend proxy (bypassing any client-side ISP DNS blocks on Cloudinary)
+ */
+const streamVideo = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const reel = await Reel.findById(id).lean();
+    if (!reel || !reel.cloudinaryUrl) {
+      return res.status(404).json({ success: false, error: 'Reel or video URL not found' });
+    }
+
+    const videoUrl = reel.cloudinaryUrl;
+    const headers = {};
+    if (req.headers.range) {
+      headers.Range = req.headers.range;
+    }
+
+    const response = await fetch(videoUrl, { headers });
+    if (!response.ok && response.status !== 206) {
+      return res.status(response.status).json({ success: false, error: 'Failed to fetch video upstream' });
+    }
+
+    res.status(response.status);
+    for (const [key, value] of response.headers.entries()) {
+      if (['content-type', 'content-length', 'accept-ranges', 'content-range'].includes(key.toLowerCase())) {
+        res.setHeader(key, value);
+      }
+    }
+
+    const { Readable } = require('stream');
+    Readable.fromWeb(response.body).pipe(res);
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   createReel,
   syncCloudinaryReels,
   getAllReels,
-  getReelById
+  getReelById,
+  streamVideo
 };

@@ -2,12 +2,21 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useUser } from '../context/UserContext';
 import { fetchRecommendation } from '../services/api';
 
+const GOOGLE_CDN_STREAMS = [
+  'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
+  'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4',
+  'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4',
+  'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyBlazes.mp4',
+  'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltdowns.mp4'
+];
+
 export const RecommendationModal = ({ isOpen, onClose, onJumpToReel }) => {
   const { userId, interactionCount, sessionDwellSeconds } = useUser();
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState(null);
   const [error, setError] = useState(null);
   const [isPlayingPreview, setIsPlayingPreview] = useState(false);
+  const [previewVideoSrc, setPreviewVideoSrc] = useState(GOOGLE_CDN_STREAMS[0]);
   const videoPreviewRef = useRef(null);
 
   useEffect(() => {
@@ -20,6 +29,14 @@ export const RecommendationModal = ({ isOpen, onClose, onJumpToReel }) => {
       }
     }
   }, [isOpen, userId]);
+
+  useEffect(() => {
+    if (data?.recommendedReel?.cloudinaryUrl) {
+      setPreviewVideoSrc(data.recommendedReel.cloudinaryUrl);
+    } else {
+      setPreviewVideoSrc(GOOGLE_CDN_STREAMS[0]);
+    }
+  }, [data]);
 
   const loadRecommendation = async () => {
     setLoading(true);
@@ -45,10 +62,14 @@ export const RecommendationModal = ({ isOpen, onClose, onJumpToReel }) => {
     }
   };
 
+  const handlePreviewVideoError = () => {
+    console.warn('[Rec Preview] Switching to Google CDN video fallback stream');
+    setPreviewVideoSrc(GOOGLE_CDN_STREAMS[0]);
+  };
+
   if (!isOpen) return null;
 
   const recReel = data?.recommendedReel;
-  const videoSrc = recReel?.cloudinaryUrl || 'https://res.cloudinary.com/ya9jbo7f/video/upload/v1787035469/Video-43343.mp4';
 
   return (
     <div className="modal-backdrop open" onClick={onClose}>
@@ -109,10 +130,11 @@ export const RecommendationModal = ({ isOpen, onClose, onJumpToReel }) => {
                   <video
                     ref={videoPreviewRef}
                     className="rec-preview-video"
-                    src={videoSrc}
+                    src={previewVideoSrc}
                     loop
                     playsInline
                     muted
+                    onError={handlePreviewVideoError}
                   />
                   <div className={`preview-play-overlay ${isPlayingPreview ? 'playing' : ''}`}>
                     <svg viewBox="0 0 24 24" fill="currentColor">
@@ -171,32 +193,38 @@ export const RecommendationModal = ({ isOpen, onClose, onJumpToReel }) => {
                   </div>
 
                   <div className="suggested-reels-grid">
-                    {data.suggestedReels.map((item, idx) => (
-                      <div
-                        key={item._id || idx}
-                        className="suggested-reel-mini-card"
-                        onClick={() => {
-                          onClose();
-                          onJumpToReel(item.title);
-                        }}
-                      >
-                        <div className="mini-video-thumb">
-                          <video
-                            src={item.cloudinaryUrl || 'https://res.cloudinary.com/ya9jbo7f/video/upload/v1787035469/Video-43343.mp4'}
-                            muted
-                            playsInline
-                          />
-                          <div className="mini-play-icon">▶</div>
-                        </div>
-                        <div className="mini-info">
-                          <div className="mini-badges">
-                            <span className="mini-category">{item.category}</span>
-                            <span className="mini-topic">{item.topic || 'Tech'}</span>
+                    {data.suggestedReels.map((item, idx) => {
+                      const itemVideo = item.cloudinaryUrl || GOOGLE_CDN_STREAMS[idx % GOOGLE_CDN_STREAMS.length];
+                      return (
+                        <div
+                          key={item._id || idx}
+                          className="suggested-reel-mini-card"
+                          onClick={() => {
+                            onClose();
+                            onJumpToReel(item.title);
+                          }}
+                        >
+                          <div className="mini-video-thumb">
+                            <video
+                              src={itemVideo}
+                              muted
+                              playsInline
+                              onError={(e) => {
+                                e.currentTarget.src = GOOGLE_CDN_STREAMS[idx % GOOGLE_CDN_STREAMS.length];
+                              }}
+                            />
+                            <div className="mini-play-icon">▶</div>
                           </div>
-                          <h5 className="mini-title">{item.title}</h5>
+                          <div className="mini-info">
+                            <div className="mini-badges">
+                              <span className="mini-category">{item.category}</span>
+                              <span className="mini-topic">{item.topic || 'Tech'}</span>
+                            </div>
+                            <h5 className="mini-title">{item.title}</h5>
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               )}

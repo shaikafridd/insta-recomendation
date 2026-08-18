@@ -57,6 +57,12 @@ router.get('/', reelController.getAllReels);
 router.post('/sync-cloudinary', reelController.syncCloudinaryReels);
 
 /**
+ * @route   GET /reels/:id/stream
+ * @desc    Stream video through backend proxy
+ */
+router.get('/:id/stream', reelController.streamVideo);
+
+/**
  * @route   GET /reels/:id
  * @desc    Get single reel by ID
  */
