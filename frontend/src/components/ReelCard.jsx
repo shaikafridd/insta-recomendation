@@ -247,7 +247,9 @@ export const ReelCard = ({
           onTimeUpdate={handleTimeUpdate}
           onEnded={handleEnded}
           aria-label={reel.title}
-        />
+        >
+          <track kind="captions" srcLang="en" label="English" default />
+        </video>
 
         {/* Play/Pause Center Indicator */}
         <div

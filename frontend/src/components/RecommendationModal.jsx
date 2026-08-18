@@ -180,7 +180,9 @@ export const RecommendationModal = ({ isOpen, onClose, onJumpToReel }) => {
                     muted
                     onError={handlePreviewVideoError}
                     aria-label={`Preview video for ${data.recommendedTechReel}`}
-                  />
+                  >
+                    <track kind="captions" srcLang="en" label="English" default />
+                  </video>
                   <div className={`preview-play-overlay ${isPlayingPreview ? 'playing' : ''}`} aria-hidden="true">
                     <svg viewBox="0 0 24 24" fill="currentColor">
                       {isPlayingPreview ? (
