@@ -74,55 +74,56 @@ export const getFallbackReels = () => [
   {
     _id: 'mock_reel_1',
     title: 'Why Centering a Div with CSS Still Breaks Your Brain',
+    topic: 'CSS Flexbox & Centering',
     caption: 'Flexbox vs CSS Grid in 45 seconds #webdev #frontend #css #javascript',
     category: 'JavaScript',
     difficulty: 'Beginner',
+    hashtags: ['#webdev', '#frontend', '#css', '#flexbox'],
     isHypeBait: false,
-    cloudinaryUrl: 'https://assets.mixkit.co/videos/preview/mixkit-software-developer-working-on-code-42845-large.mp4'
+    cloudinaryUrl: 'https://res.cloudinary.com/ya9jbo7f/video/upload/v1787035456/Video-87899.mp4'
   },
   {
     _id: 'mock_reel_2',
-    title: 'Designing a Distributed Rate Limiter with Token Bucket & Redis',
-    caption: 'System Design for high-throughput APIs handling 100k req/sec #hld #systemdesign #backend',
-    category: 'HLD',
-    difficulty: 'Advanced',
+    title: '15‑Second Crash Course: What Is a DNS Query?',
+    topic: 'Domain Name System (DNS) Basics',
+    caption: 'How browser domain resolution works across authoritative nameservers #cloud #dns #networking',
+    category: 'Cloud',
+    difficulty: 'Beginner',
+    hashtags: ['#DNS', '#Networking', '#CloudBasics'],
     isHypeBait: false,
-    cloudinaryUrl: 'https://assets.mixkit.co/videos/preview/mixkit-programmer-working-on-his-laptop-in-an-office-42844-large.mp4'
+    cloudinaryUrl: 'https://res.cloudinary.com/ya9jbo7f/video/upload/v1787035469/Video-43343.mp4'
   },
   {
     _id: 'mock_reel_3',
-    title: 'Binary Search Edge Cases: Never Get Off-by-One Errors Again',
-    caption: 'Mastering the low <= high invariant in interview coding rounds #dsa #algorithms #leetcode',
-    category: 'DSA',
-    difficulty: 'Intermediate',
+    title: '15‑Second Git Stash Cheat Sheet',
+    topic: 'Git Stash & Workspace Management',
+    caption: 'Save uncommitted work without creating dirty commits #git #devtips #coding',
+    category: 'Career',
+    difficulty: 'Beginner',
+    hashtags: ['#Git', '#VersionControl', '#DevTips'],
     isHypeBait: false,
-    cloudinaryUrl: 'https://assets.mixkit.co/videos/preview/mixkit-hands-typing-on-a-laptop-keyboard-42840-large.mp4'
+    cloudinaryUrl: 'https://res.cloudinary.com/ya9jbo7f/video/upload/v1787035460/Video-10581.mp4'
   },
   {
     _id: 'mock_reel_4',
-    title: '10 AI Tools That Will Get You Hired Instantly in 2025!',
-    caption: 'Top secret AI cheatsheets that software engineers don’t want you to know 🚀💸 #ai #aitools #clickbait',
-    category: 'AI',
-    difficulty: 'Beginner',
-    isHypeBait: true,
-    cloudinaryUrl: 'https://assets.mixkit.co/videos/preview/mixkit-man-working-with-a-computer-and-writing-notes-42842-large.mp4'
+    title: 'Quick Guide: Optimizing MP4 Videos with Cloudinary',
+    topic: 'Cloud Video Optimization & Transcoding',
+    caption: 'Adaptive bitrate streaming and WebM fallback compression #cloud #video #webperformance',
+    category: 'Cloud',
+    difficulty: 'Intermediate',
+    hashtags: ['#Cloudinary', '#VideoOptimization', '#WebPerformance'],
+    isHypeBait: false,
+    cloudinaryUrl: 'https://res.cloudinary.com/ya9jbo7f/video/upload/v1787035462/Video-42124.mp4'
   },
   {
     _id: 'mock_reel_5',
-    title: 'A Day in the Life of a Staff Backend Engineer at Scale',
-    caption: 'Balancing architecture RFCs, distributed tracing, and code reviews #backend #career #lifestyle',
-    category: 'Career',
-    difficulty: 'Intermediate',
+    title: '15‑Second Quick Tip: HTTP Status Codes Explained',
+    topic: 'REST APIs & HTTP Response Statuses',
+    caption: 'Understanding 2xx, 3xx, 4xx, and 5xx response headers in modern APIs #http #webdev #apis',
+    category: 'Other',
+    difficulty: 'Beginner',
+    hashtags: ['#HTTP', '#WebDev', '#StatusCodes'],
     isHypeBait: false,
-    cloudinaryUrl: 'https://assets.mixkit.co/videos/preview/mixkit-close-up-of-a-circuit-board-with-neon-lights-42848-large.mp4'
-  },
-  {
-    _id: 'mock_reel_6',
-    title: 'Zero-Downtime Blue/Green Deployments with Kubernetes',
-    caption: 'How production clusters deploy updates without dropping active requests #cloud #devops #kubernetes',
-    category: 'Cloud',
-    difficulty: 'Advanced',
-    isHypeBait: false,
-    cloudinaryUrl: 'https://assets.mixkit.co/videos/preview/mixkit-young-man-wearing-headphones-working-on-a-computer-42843-large.mp4'
+    cloudinaryUrl: 'https://res.cloudinary.com/ya9jbo7f/video/upload/v1787035458/Video-47797.mp4'
   }
 ];

@@ -11,12 +11,16 @@ import {
 } from './Icons';
 
 const SAMPLE_VIDEOS = [
-  'https://assets.mixkit.co/videos/preview/mixkit-software-developer-working-on-code-42845-large.mp4',
-  'https://assets.mixkit.co/videos/preview/mixkit-programmer-working-on-his-laptop-in-an-office-42844-large.mp4',
-  'https://assets.mixkit.co/videos/preview/mixkit-hands-typing-on-a-laptop-keyboard-42840-large.mp4',
-  'https://assets.mixkit.co/videos/preview/mixkit-man-working-with-a-computer-and-writing-notes-42842-large.mp4',
-  'https://assets.mixkit.co/videos/preview/mixkit-close-up-of-a-circuit-board-with-neon-lights-42848-large.mp4',
-  'https://assets.mixkit.co/videos/preview/mixkit-young-man-wearing-headphones-working-on-a-computer-42843-large.mp4'
+  'https://res.cloudinary.com/ya9jbo7f/video/upload/v1787035469/Video-43343.mp4',
+  'https://res.cloudinary.com/ya9jbo7f/video/upload/v1787035462/Video-42124.mp4',
+  'https://res.cloudinary.com/ya9jbo7f/video/upload/v1787035460/Video-10581.mp4',
+  'https://res.cloudinary.com/ya9jbo7f/video/upload/v1787035457/Video-63457.mp4',
+  'https://res.cloudinary.com/ya9jbo7f/video/upload/v1787035458/Video-47797.mp4',
+  'https://res.cloudinary.com/ya9jbo7f/video/upload/v1787035456/Video-87899.mp4',
+  'https://res.cloudinary.com/ya9jbo7f/video/upload/v1787035455/Video-5949.mp4',
+  'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
+  'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4',
+  'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4'
 ];
 
 export const ReelCard = ({
