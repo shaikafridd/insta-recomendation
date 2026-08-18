@@ -70,7 +70,7 @@ export const App = () => {
       />
 
       {/* Main Reels Feed Area */}
-      <main className="reels-main-wrapper">
+      <main id="main-content" className="reels-main-wrapper" role="main" aria-label="Reels Main Feed Area">
         <ReelsFeed
           reels={reels}
           loading={loading}

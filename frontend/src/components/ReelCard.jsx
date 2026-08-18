@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { useUser } from '../context/UserContext';
 import {
   HeartIcon,
@@ -10,6 +10,9 @@ import {
   PauseIcon
 } from './Icons';
 
+/**
+ * Universal high-availability Google Cloud CDN video streams for zero-fail fallback
+ */
 const SAMPLE_VIDEOS = [
   'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
   'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4',
@@ -23,6 +26,11 @@ const SAMPLE_VIDEOS = [
   'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/WhatCarCanYouGetForAGrand.mp4'
 ];
 
+/**
+ * ReelCard Component
+ * Displays a single short-form tech video with interactive telemetry logging,
+ * like/share/sound controls, and WCAG 2.1 accessibility.
+ */
 export const ReelCard = ({
   reel,
   index,
@@ -42,7 +50,7 @@ export const ReelCard = ({
   const tapTimeoutRef = useRef(null);
   const [errorCount, setErrorCount] = useState(0);
 
-  // Pick video source (use sample MP4 if cloudinary is placeholder or on error)
+  // Pick video source
   const initialVideoSrc =
     reel.cloudinaryUrl &&
     reel.cloudinaryUrl.startsWith('http') &&
@@ -61,15 +69,14 @@ export const ReelCard = ({
     }
   }, [reel.cloudinaryUrl, index]);
 
-  const handleVideoError = () => {
-    if (errorCount >= 2) return; // Prevent repeated retry loops
-    const nextCount = errorCount + 1;
-    setErrorCount(nextCount);
+  const handleVideoError = useCallback(() => {
+    if (errorCount >= 2) return;
+    setErrorCount((prev) => prev + 1);
 
     const googleCdnFallback = SAMPLE_VIDEOS[index % SAMPLE_VIDEOS.length];
     console.warn(`[Video Player] Network stream error. Switching to high-speed CDN stream.`);
     setVideoSrc(googleCdnFallback);
-  };
+  }, [errorCount, index]);
 
   const authorHandle = getHandleForCategory(reel.category);
 
@@ -115,7 +122,6 @@ export const ReelCard = ({
     }
 
     if (tapTimeoutRef.current) {
-      // Double tap detected
       clearTimeout(tapTimeoutRef.current);
       tapTimeoutRef.current = null;
       handleDoubleTap(e);
@@ -132,9 +138,10 @@ export const ReelCard = ({
     if (!video) return;
 
     if (video.paused) {
-      video.play();
-      setIsPlaying(true);
-      setIndicatorIcon('play');
+      video.play().then(() => {
+        setIsPlaying(true);
+        setIndicatorIcon('play');
+      }).catch(() => {});
     } else {
       video.pause();
       setIsPlaying(false);
@@ -199,9 +206,36 @@ export const ReelCard = ({
     showToast('Reel link copied to clipboard 🔗');
   };
 
+  const handleKeyDown = (e) => {
+    if (e.key === ' ' || e.key === 'Enter') {
+      e.preventDefault();
+      togglePlayPause();
+    } else if (e.key === 'l' || e.key === 'L') {
+      e.preventDefault();
+      handleLikeClick(e);
+    } else if (e.key === 'm' || e.key === 'M') {
+      e.preventDefault();
+      toggleMute();
+    }
+  };
+
   return (
-    <div className="reel-card" data-index={index} data-title={reel.title}>
-      <div className="reel-video-container" onClick={handleContainerClick}>
+    <article
+      className="reel-card"
+      data-index={index}
+      data-title={reel.title}
+      role="article"
+      aria-roledescription="Short-form tech reel"
+      aria-label={`Reel: ${reel.title} by ${authorHandle}`}
+      tabIndex={0}
+      onKeyDown={handleKeyDown}
+    >
+      <div
+        className="reel-video-container"
+        onClick={handleContainerClick}
+        role="region"
+        aria-label="Video Player Area. Click to Play/Pause, Double Click to Like."
+      >
         <video
           ref={videoRef}
           className="reel-video"
@@ -212,57 +246,82 @@ export const ReelCard = ({
           onError={handleVideoError}
           onTimeUpdate={handleTimeUpdate}
           onEnded={handleEnded}
+          aria-label={reel.title}
         />
 
         {/* Play/Pause Center Indicator */}
-        <div className={`play-pause-indicator ${showPlayIndicator ? 'visible' : ''}`}>
+        <div
+          className={`play-pause-indicator ${showPlayIndicator ? 'visible' : ''}`}
+          aria-hidden="true"
+        >
           {indicatorIcon === 'play' ? <PlayIcon /> : <PauseIcon />}
         </div>
 
         {/* Sound Toggle Button */}
         <button
+          type="button"
           className="sound-toggle-btn"
           onClick={(e) => {
             e.stopPropagation();
             toggleMute();
           }}
-          title={isMuted ? 'Unmute' : 'Mute'}
+          aria-label={isMuted ? 'Unmute Audio (or press M)' : 'Mute Audio (or press M)'}
+          aria-pressed={!isMuted}
+          title={isMuted ? 'Unmute (M)' : 'Mute (M)'}
         >
           {isMuted ? <SoundMutedIcon /> : <SoundUnmutedIcon />}
         </button>
 
         {/* Right Floating Actions */}
-        <div className="reel-actions-sidebar">
-          <button className={`action-btn like-btn ${isLiked ? 'liked' : ''}`} onClick={handleLikeClick}>
-            <div className="icon-wrap">
+        <div className="reel-actions-sidebar" role="toolbar" aria-label="Reel Actions">
+          <button
+            type="button"
+            className={`action-btn like-btn ${isLiked ? 'liked' : ''}`}
+            onClick={handleLikeClick}
+            aria-label={`Like this reel. Current likes: ${likeCount}`}
+            aria-pressed={isLiked}
+          >
+            <div className="icon-wrap" aria-hidden="true">
               <HeartIcon filled={isLiked} />
             </div>
             <span className="action-count">{likeCount}</span>
           </button>
 
-          <button className="action-btn comment-btn" onClick={(e) => e.stopPropagation()}>
-            <div className="icon-wrap">
+          <button
+            type="button"
+            className="action-btn comment-btn"
+            onClick={(e) => e.stopPropagation()}
+            aria-label="View Comments. 48 comments."
+          >
+            <div className="icon-wrap" aria-hidden="true">
               <CommentIcon />
             </div>
             <span className="action-count">48</span>
           </button>
 
-          <button className="action-btn share-btn" onClick={handleShareClick}>
-            <div className="icon-wrap">
+          <button
+            type="button"
+            className="action-btn share-btn"
+            onClick={handleShareClick}
+            aria-label="Share reel link to clipboard"
+          >
+            <div className="icon-wrap" aria-hidden="true">
               <ShareIcon />
             </div>
             <span className="action-count">Share</span>
           </button>
 
           <button
+            type="button"
             className="action-btn ai-quick-rec-btn"
             onClick={(e) => {
               e.stopPropagation();
               onOpenRecommendations();
             }}
+            aria-label="Open AI Recommendations tailored to your interests"
             title="Open AI Recommendations"
           >
-            <div className="icon-wrap" style={{ background: 'var(--ig-gradient)', border: 'none' }}>
+            <div className="icon-wrap" style={{ background: 'var(--orange-gradient)', border: 'none' }} aria-hidden="true">
               <span style={{ fontSize: '1.1rem' }}>✨</span>
             </div>
             <span className="action-count">AI Rec</span>
@@ -275,23 +334,24 @@ export const ReelCard = ({
             <div
               className="creator-avatar"
               style={{ background: getAvatarColor(index) }}
+              aria-hidden="true"
             />
             <span className="creator-name">{authorHandle}</span>
-            <span className="follow-tag">Follow</span>
+            <span className="follow-tag" role="button" tabIndex={0}>Follow</span>
           </div>
 
-          <div className="reel-badges-row">
+          <div className="reel-badges-row" aria-label="Tags and classifications">
             <span className="category-badge">{reel.category || 'Tech'}</span>
             {reel.topic && <span className="topic-badge">{reel.topic}</span>}
             <span className="difficulty-badge">{reel.difficulty || 'Beginner'}</span>
             {reel.isHypeBait && <span className="hype-warn-badge">⚠️ Hype-Bait</span>}
           </div>
 
-          <h3 className="reel-title">{reel.title}</h3>
+          <h2 className="reel-title">{reel.title}</h2>
           {reel.caption && <p className="reel-caption">{reel.caption}</p>}
 
           {reel.hashtags && reel.hashtags.length > 0 && (
-            <div className="hashtags-row">
+            <div className="hashtags-row" aria-label="Hashtags">
               {reel.hashtags.map((ht, hIdx) => (
                 <span key={hIdx} className="hashtag-tag">
                   {ht.startsWith('#') ? ht : `#${ht}`}
@@ -300,8 +360,8 @@ export const ReelCard = ({
             </div>
           )}
 
-          <div className="audio-track-row">
-            <svg viewBox="0 0 24 24" fill="currentColor">
+          <div className="audio-track-row" aria-label={`Original audio track by ${authorHandle}`}>
+            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
               <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z" />
             </svg>
             <span>Original Audio · {authorHandle}</span>
@@ -309,11 +369,18 @@ export const ReelCard = ({
         </div>
 
         {/* Bottom Progress Bar */}
-        <div className="reel-progress-container">
+        <div
+          className="reel-progress-container"
+          role="progressbar"
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-valuenow={Math.round(progress)}
+          aria-label="Reel playback progress"
+        >
           <div className="reel-progress-fill" style={{ width: `${progress}%` }} />
         </div>
       </div>
-    </div>
+    </article>
   );
 };
 
@@ -334,6 +401,6 @@ function getHandleForCategory(cat) {
 }
 
 function getAvatarColor(index) {
-  const colors = ['#e1306c', '#405de6', '#5851db', '#fd1d1d', '#f77737', '#0095f6', '#00ba7c'];
+  const colors = ['#d95700', '#0369a1', '#6d28d9', '#dc2626', '#b84900', '#0284c7', '#047857'];
   return colors[index % colors.length];
 }
