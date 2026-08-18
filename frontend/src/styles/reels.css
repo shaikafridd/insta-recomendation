@@ -1,0 +1,341 @@
+/* Reels Feed Container with Scroll Snap */
+.reels-feed-container {
+  width: 100%;
+  max-width: var(--reel-width);
+  height: var(--reel-height);
+  max-height: var(--max-reel-height);
+  overflow-y: scroll;
+  scroll-snap-type: y mandatory;
+  scroll-behavior: smooth;
+  border-radius: var(--radius-lg);
+  position: relative;
+  background: #000;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
+  scrollbar-width: none;
+}
+
+.reels-feed-container::-webkit-scrollbar {
+  display: none;
+}
+
+/* Single Reel Card */
+.reel-card {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
+  overflow: hidden;
+  background: #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.reel-video-container {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.reel-video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Play/Pause Center Indicator */
+.play-pause-indicator {
+  position: absolute;
+  width: 68px;
+  height: 68px;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(8px);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  opacity: 0;
+  transform: scale(0.7);
+  transition: all 0.2s ease;
+  pointer-events: none;
+  z-index: 5;
+}
+
+.play-pause-indicator.visible {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.play-pause-indicator svg {
+  width: 32px;
+  height: 32px;
+}
+
+/* Right Floating Action Sidebar */
+.reel-actions-sidebar {
+  position: absolute;
+  right: 14px;
+  bottom: 84px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  z-index: 10;
+}
+
+.action-btn {
+  background: transparent;
+  border: none;
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  transition: transform 0.15s ease;
+}
+
+.action-btn:hover {
+  transform: scale(1.1);
+}
+
+.action-btn:active {
+  transform: scale(0.9);
+}
+
+.icon-wrap {
+  width: 44px;
+  height: 44px;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(12px);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.icon-wrap svg {
+  width: 24px;
+  height: 24px;
+}
+
+.action-btn.liked .icon-wrap svg {
+  fill: var(--accent-red);
+  color: var(--accent-red);
+}
+
+.action-btn.liked {
+  color: var(--accent-red);
+}
+
+.action-count {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+}
+
+/* Sound Indicator Badge */
+.sound-toggle-btn {
+  position: absolute;
+  top: 20px;
+  right: 16px;
+  z-index: 10;
+  width: 36px;
+  height: 36px;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(10px);
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.sound-toggle-btn svg {
+  width: 18px;
+  height: 18px;
+}
+
+/* Bottom Information Overlay */
+.reel-overlay {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 60px 70px 20px 16px;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.95) 0%, rgba(0, 0, 0, 0.6) 50%, transparent 100%);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  pointer-events: none;
+  z-index: 5;
+}
+
+.reel-user-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  pointer-events: auto;
+}
+
+.creator-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #333;
+  object-fit: cover;
+  border: 1.5px solid #fff;
+}
+
+.creator-name {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #fff;
+}
+
+.follow-tag {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #fff;
+  background: rgba(255, 255, 255, 0.2);
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+}
+
+.reel-badges-row {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.category-badge {
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  background: var(--accent-blue);
+  color: #fff;
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+.difficulty-badge {
+  font-size: 0.68rem;
+  font-weight: 700;
+  background: rgba(255, 255, 255, 0.18);
+  color: #e0e0e0;
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+.hype-warn-badge {
+  font-size: 0.68rem;
+  font-weight: 800;
+  background: #ffaa00;
+  color: #000;
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+.reel-title {
+  font-size: 0.96rem;
+  font-weight: 700;
+  line-height: 1.3;
+  color: #ffffff;
+  pointer-events: auto;
+}
+
+.reel-caption {
+  font-size: 0.82rem;
+  color: #e5e5e5;
+  line-height: 1.35;
+  pointer-events: auto;
+  max-height: 48px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.topic-badge {
+  font-size: 0.68rem;
+  font-weight: 700;
+  background: rgba(155, 81, 224, 0.3);
+  border: 1px solid rgba(155, 81, 224, 0.6);
+  color: #d8b4fe;
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+.hashtags-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 2px;
+}
+
+.hashtag-tag {
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: #38bdf8;
+  background: rgba(56, 189, 248, 0.12);
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+
+.audio-track-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.75rem;
+  color: #bfbfbf;
+  margin-top: 4px;
+}
+
+.audio-track-row svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* Bottom Progress Bar */
+.reel-progress-container {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 3px;
+  background: rgba(255, 255, 255, 0.2);
+  z-index: 10;
+}
+
+.reel-progress-fill {
+  height: 100%;
+  background: #ffffff;
+  transition: width 0.1s linear;
+}
+
+/* Loading Feed */
+.loading-spinner-container {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  color: var(--text-secondary);
+}
+
+@media (max-width: 860px) {
+  .reels-feed-container {
+    max-width: 100vw;
+    height: 100vh;
+    max-height: 100vh;
+    border-radius: 0;
+  }
+}
