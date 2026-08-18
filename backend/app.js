@@ -18,19 +18,42 @@ const { RATE_LIMITS, CSP_DIRECTIVES } = require('./constants');
 const app = express();
 
 // ==========================================
-// 1. ENTERPRISE SECURITY & HEADERS (100/100)
+// 1. TOP-LEVEL CORS & PREFLIGHT HANDLERS (FIRST)
 // ==========================================
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      // Allow all origins including Netlify, Vercel, localhost, and server-to-server requests
+      callback(null, true);
+    },
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin']
+  })
+);
 
-/**
- * Configure Helmet with explicit Content Security Policy (CSP)
- * Allows verified video CDN streams, Google fonts, and Cloudinary media while denying unauthorized injection.
- */
+app.use((req, res, next) => {
+  const origin = req.headers.origin || '*';
+  res.header('Access-Control-Allow-Origin', origin);
+  res.header('Access-Control-Allow-Credentials', 'true');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+  next();
+});
+
+// ==========================================
+// 2. ENTERPRISE SECURITY & HEADERS
+// ==========================================
 app.use(
   helmet({
     contentSecurityPolicy: {
       directives: CSP_DIRECTIVES
     },
     crossOriginResourcePolicy: { policy: 'cross-origin' },
+    crossOriginOpenerPolicy: false,
     crossOriginEmbedderPolicy: false,
     frameguard: { action: 'deny' },
     xssFilter: true,
@@ -44,14 +67,20 @@ app.use(
   })
 );
 
+// Body Parsers (before input sanitization and routes)
+app.use(express.json({ limit: '2mb' }));
+app.use(express.urlencoded({ extended: true, limit: '2mb' }));
+
 /**
- * Rate Limiters: Defends against DoS, brute-force telemetry spam, and LLM quota exhaustion
+ * Rate Limiters: Defends against DoS, brute-force telemetry spam, and LLM quota exhaustion.
+ * Skips preflight OPTIONS requests to avoid browser CORS errors.
  */
 const generalLimiter = rateLimit({
   windowMs: RATE_LIMITS.GENERAL_WINDOW_MS,
   max: RATE_LIMITS.GENERAL_MAX,
   standardHeaders: true,
   legacyHeaders: false,
+  skip: (req) => req.method === 'OPTIONS',
   message: {
     success: false,
     error: 'Too many requests from this IP. Please try again later.'
@@ -63,6 +92,7 @@ const interactionLimiter = rateLimit({
   max: RATE_LIMITS.INTERACTIONS_MAX,
   standardHeaders: true,
   legacyHeaders: false,
+  skip: (req) => req.method === 'OPTIONS',
   message: {
     success: false,
     error: 'Telemetry interaction rate limit exceeded. Please throttle rapid requests.'
@@ -74,6 +104,7 @@ const recommendationLimiter = rateLimit({
   max: RATE_LIMITS.RECOMMENDATIONS_MAX,
   standardHeaders: true,
   legacyHeaders: false,
+  skip: (req) => req.method === 'OPTIONS',
   message: {
     success: false,
     error: 'Recommendation inference rate limit exceeded. Please wait a moment.'
@@ -85,6 +116,7 @@ const syncLimiter = rateLimit({
   max: RATE_LIMITS.SYNC_MAX,
   standardHeaders: true,
   legacyHeaders: false,
+  skip: (req) => req.method === 'OPTIONS',
   message: {
     success: false,
     error: 'Cloudinary sync rate limit reached. Please wait before re-syncing.'
@@ -93,8 +125,11 @@ const syncLimiter = rateLimit({
 
 app.use('/api/', generalLimiter);
 app.use('/interactions', interactionLimiter);
+app.use('/api/interactions', interactionLimiter);
 app.use('/recommendations', recommendationLimiter);
+app.use('/api/recommendations', recommendationLimiter);
 app.use('/reels/sync-cloudinary', syncLimiter);
+app.use('/api/reels/sync-cloudinary', syncLimiter);
 
 /**
  * Deep Input Sanitizer:
@@ -105,7 +140,7 @@ app.use('/reels/sync-cloudinary', syncLimiter);
  */
 const sanitizeDeep = (val) => {
   if (val === null || val === undefined) return val;
-  
+
   if (typeof val === 'string') {
     return val
       .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
@@ -164,15 +199,6 @@ const sanitizeLog = (str) =>
         .replace(/cloudinary:\/\/[^\s]+/g, '[REDACTED_CLOUDINARY_URI]')
     : str;
 
-// CORS with explicit allowed headers and options
-app.use(
-  cors({
-    origin: '*',
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept']
-  })
-);
-
 app.use(
   morgan((tokens, req, res) => {
     const raw = [
@@ -188,20 +214,17 @@ app.use(
   })
 );
 
-app.use(express.json({ limit: '2mb' }));
-app.use(express.urlencoded({ extended: true, limit: '2mb' }));
-
 // ==========================================
-// 2. STATIC ASSETS & SPA SERVING
+// 3. STATIC ASSETS & SPA SERVING
 // ==========================================
 const distPath = path.join(__dirname, '../frontend/dist');
 const staticPath = fs.existsSync(distPath) ? distPath : path.join(__dirname, '../frontend');
 app.use(express.static(staticPath));
 
 // ==========================================
-// 3. HEALTH CHECK & TELEMETRY
+// 4. HEALTH CHECK & TELEMETRY
 // ==========================================
-app.get('/health', (req, res) => {
+const healthHandler = (req, res) => {
   res.status(200).json({
     status: 'online',
     timestamp: new Date().toISOString(),
@@ -212,17 +235,31 @@ app.get('/health', (req, res) => {
       cloudinary: env.CLOUDINARY_CLOUD_NAME ? 'configured' : 'mock-mode'
     }
   });
-});
+};
+
+app.get('/health', healthHandler);
+app.get('/api/health', healthHandler);
 
 // ==========================================
-// 4. API ROUTES
+// 5. API ROUTES (Both standard and /api/ prefixed)
 // ==========================================
 app.use('/reels', reelRoutes);
+app.use('/api/reels', reelRoutes);
+
 app.use('/interactions', interactionRoutes);
+app.use('/api/interactions', interactionRoutes);
+
+app.use('/recommendations', recommendationRoutes);
+app.use('/api/recommendations', recommendationRoutes);
+
+app.use('/interest-profile', recommendationRoutes);
+app.use('/api/interest-profile', recommendationRoutes);
+
+app.use('/api', recommendationRoutes);
 app.use('/', recommendationRoutes);
 
 // ==========================================
-// 5. SPA ROUTING & 404 HANDLER
+// 6. SPA ROUTING & 404 HANDLER
 // ==========================================
 app.use((req, res, next) => {
   if (req.method === 'GET' && req.accepts('html')) {
@@ -235,11 +272,15 @@ app.use((req, res, next) => {
 });
 
 // ==========================================
-// 6. GLOBAL CENTRALIZED ERROR HANDLER
+// 7. GLOBAL CENTRALIZED ERROR HANDLER
 // ==========================================
 app.use((err, req, res, _next) => {
   const statusCode = err.statusCode || 500;
   const message = err.message || 'Internal Server Error';
+
+  const origin = req.headers.origin || '*';
+  res.header('Access-Control-Allow-Origin', origin);
+  res.header('Access-Control-Allow-Credentials', 'true');
 
   if (!err.isOperational) {
     console.error(`[CRITICAL PROGRAMMER ERROR] ${req.method} ${req.originalUrl}:`, err);

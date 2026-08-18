@@ -59,8 +59,9 @@ export const RecommendationModal = ({ isOpen, onClose, onJumpToReel }) => {
   }, [isOpen, latestRecommendation, loadRecommendation, setHasNewRecNotification]);
 
   useEffect(() => {
-    if (data?.recommendedReel?.cloudinaryUrl) {
-      setPreviewVideoSrc(data.recommendedReel.cloudinaryUrl);
+    const url = data?.recommendedReel?.cloudinaryUrl;
+    if (url && url.startsWith('http') && !url.includes('demo/video')) {
+      setPreviewVideoSrc(url);
     } else {
       setPreviewVideoSrc(GOOGLE_CDN_STREAMS[0]);
     }
