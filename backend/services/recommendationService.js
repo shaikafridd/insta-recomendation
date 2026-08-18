@@ -311,7 +311,7 @@ const formatRecommendationResponse = async ({
 };
 
 const escapeRegex = (string) => {
-  return string.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+  return string.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&');
 };
 
 // --- Server-Sent Events (SSE) Live Broadcast Pipeline ---
@@ -352,7 +352,7 @@ const broadcastRecommendationToUser = (userId, recommendationData) => {
   for (const client of clients) {
     try {
       client.write(payload);
-    } catch (e) {
+    } catch {
       // Disconnected client handled on close
     }
   }

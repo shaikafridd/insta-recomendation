@@ -1,13 +1,11 @@
 const dns = require('dns');
-try { dns.setServers(['8.8.8.8', '1.1.1.1']); } catch (e) {}
+try { dns.setServers(['8.8.8.8', '1.1.1.1']); } catch {}
 
 const mongoose = require('mongoose');
 const env = require('../config/env');
 const { Reel } = require('../models/Reel');
-const { Interaction } = require('../models/Interaction');
 const { RecommendationLog } = require('../models/RecommendationLog');
 const { computeEngagementScore, shouldTriggerRecommendation } = require('../services/engagement');
-const profileService = require('../services/profileService');
 const recommendationService = require('../services/recommendationService');
 
 const runTest = async () => {
@@ -52,7 +50,6 @@ const runTest = async () => {
     console.log(`\n[Test] Using Test User ID: ${testUserId}`);
 
     const hldReel = reels.find((r) => r.category === 'HLD') || reels[0];
-    const jsReel = reels.find((r) => r.category === 'JavaScript') || reels[1];
 
     // 3. Test Like Event -> Same Category Recommendation
     console.log('\n--- 2. Testing recommendFromSameCategory (Like Signal) ---');

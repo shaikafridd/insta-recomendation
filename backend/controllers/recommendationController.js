@@ -64,7 +64,7 @@ const streamRecommendations = async (req, res, next) => {
     const heartbeatTimer = setInterval(() => {
       try {
         res.write(': heartbeat\n\n');
-      } catch (err) {
+      } catch {
         clearInterval(heartbeatTimer);
       }
     }, 30000);

@@ -25,7 +25,7 @@ const parseFormDataBody = (req, res, next) => {
   if (req.body && typeof req.body.tags === 'string') {
     try {
       req.body.tags = JSON.parse(req.body.tags);
-    } catch (e) {
+    } catch {
       req.body.tags = req.body.tags.split(',').map((t) => t.trim());
     }
   }

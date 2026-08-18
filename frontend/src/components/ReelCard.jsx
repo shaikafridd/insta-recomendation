@@ -236,7 +236,7 @@ export const ReelCard = ({
         className="reel-video-container"
         onClick={handleContainerClick}
         role="region"
-        aria-label="Video Player Area. Click to Play/Pause, Double Click to Like."
+        aria-label={`Video Player Area. Status: ${isPlaying ? 'playing' : 'paused'}. Click to Play/Pause, Double Click to Like.`}
       >
         {isMounted ? (
           <video

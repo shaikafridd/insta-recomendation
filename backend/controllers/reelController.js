@@ -112,10 +112,7 @@ const syncCloudinaryReels = async (req, res, next) => {
     });
   } catch (error) {
     console.error('[Sync] Error syncing from Cloudinary:', error.message);
-    return res.status(500).json({
-      success: false,
-      error: error.message
-    });
+    next(error);
   }
 };
 

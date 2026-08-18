@@ -59,7 +59,7 @@ if (env.REDIS_URL && env.REDIS_URL.trim() !== '') {
     if (client.connector && client.connector.stream) {
       client.connector.stream.unref?.();
     }
-  } catch (error) {
+  } catch {
     isRedisReady = false;
   }
 }
@@ -69,7 +69,7 @@ const cache = {
     if (isRedisReady && client) {
       try {
         return await client.get(key);
-      } catch (err) {
+      } catch {
         return await inMemoryFallback.get(key);
       }
     }
@@ -83,7 +83,7 @@ const cache = {
           return await client.set(key, value, mode, duration);
         }
         return await client.set(key, value);
-      } catch (err) {
+      } catch {
         return await inMemoryFallback.set(key, value, mode, duration);
       }
     }
@@ -94,7 +94,7 @@ const cache = {
     if (isRedisReady && client) {
       try {
         return await client.del(key);
-      } catch (err) {
+      } catch {
         return await inMemoryFallback.del(key);
       }
     }

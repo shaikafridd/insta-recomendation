@@ -28,7 +28,7 @@ export const syncCloudinaryReels = async () => {
   let data;
   try {
     data = JSON.parse(text);
-  } catch (e) {
+  } catch {
     throw new Error('Please restart backend server (`npm start` or `npm run dev`) to load new Cloudinary route & credentials.');
   }
   if (!res.ok) throw new Error(data.error || 'Failed to sync with Cloudinary');
@@ -46,7 +46,8 @@ export const logInteraction = async ({ userId, reelId, eventType, watchPercent, 
         reelId,
         eventType,
         watchPercent: Number(watchPercent) || 0,
-        dwellMs: Number(dwellMs) || 0
+        dwellMs: Number(dwellMs) || 0,
+        replayCount: Number(replayCount) || 0
       })
     });
     return await res.json();

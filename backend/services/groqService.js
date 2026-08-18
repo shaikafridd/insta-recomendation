@@ -2,7 +2,7 @@ const Groq = require('groq-sdk');
 const { CATEGORIES, DIFFICULTIES } = require('../constants');
 
 const GROQ_MODEL = process.env.GROQ_MODEL || 'openai/gpt-oss-120b';
-const FALLBACK_MODEL = 'qwen/qwen3.6-27b';
+const FALLBACK_MODEL = process.env.GROQ_FALLBACK_MODEL || 'qwen/qwen3.6-27b';
 const REQUEST_TIMEOUT_MS = 12000;
 const MAX_RETRIES = 2;
 
@@ -35,16 +35,37 @@ const callWithRetry = async (fn, retries = MAX_RETRIES, delayMs = 1000) => {
   }
 };
 
+const requestGroqChatCompletion = async (client, payload) => {
+  try {
+    return await callWithRetry(async () => {
+      const response = await client.chat.completions.create({
+        ...payload,
+        model: GROQ_MODEL
+      });
+      return response.choices[0]?.message?.content;
+    });
+  } catch (err) {
+    console.warn(`[Groq] Primary model (${GROQ_MODEL}) failed: ${err.message}. Retrying with fallback model (${FALLBACK_MODEL})...`);
+    return await callWithRetry(async () => {
+      const response = await client.chat.completions.create({
+        ...payload,
+        model: FALLBACK_MODEL
+      });
+      return response.choices[0]?.message?.content;
+    });
+  }
+};
+
 const safeParseJSON = (text) => {
   if (!text || typeof text !== 'string') return null;
   try {
     return JSON.parse(text.trim());
-  } catch (e) {
+  } catch {
     const match = text.match(/\{[\s\S]*\}/);
     if (match) {
       try {
         return JSON.parse(match[0]);
-      } catch (err2) {
+      } catch {
         return null;
       }
     }
@@ -109,17 +130,13 @@ Return strict JSON:
 Generate high-quality educational metadata for this reel. Respond ONLY with the JSON object.`;
 
   try {
-    const result = await callWithRetry(async () => {
-      const response = await client.chat.completions.create({
-        model: GROQ_MODEL,
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: userPrompt }
-        ],
-        response_format: { type: 'json_object' },
-        temperature: 0.2
-      });
-      return response.choices[0]?.message?.content;
+    const result = await requestGroqChatCompletion(client, {
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userPrompt }
+      ],
+      response_format: { type: 'json_object' },
+      temperature: 0.2
     });
 
     const parsed = safeParseJSON(result);
@@ -206,17 +223,13 @@ Return strict JSON:
   const userPrompt = `Analyze this user's recent video interaction session:\n\n${interactionsSummary}\n\nInfer their underlying technical/career interest cluster using topics, hashtags, and titles. Respond ONLY with the requested JSON object.`;
 
   try {
-    const result = await callWithRetry(async () => {
-      const response = await client.chat.completions.create({
-        model: GROQ_MODEL,
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: userPrompt }
-        ],
-        response_format: { type: 'json_object' },
-        temperature: 0.2
-      });
-      return response.choices[0]?.message?.content;
+    const result = await requestGroqChatCompletion(client, {
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userPrompt }
+      ],
+      response_format: { type: 'json_object' },
+      temperature: 0.2
     });
 
     const parsed = safeParseJSON(result);
@@ -298,17 +311,13 @@ ${candidatesFormatted}
 Pick the single best candidate reel. Respond ONLY with the JSON object.`;
 
   try {
-    const result = await callWithRetry(async () => {
-      const response = await client.chat.completions.create({
-        model: GROQ_MODEL,
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: userPrompt }
-        ],
-        response_format: { type: 'json_object' },
-        temperature: 0.2
-      });
-      return response.choices[0]?.message?.content;
+    const result = await requestGroqChatCompletion(client, {
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userPrompt }
+      ],
+      response_format: { type: 'json_object' },
+      temperature: 0.2
     });
 
     const parsed = safeParseJSON(result);
@@ -415,17 +424,13 @@ ${candidatesFormatted}
 Select the single best candidate reel. Return ONLY the JSON object.`;
 
   try {
-    const result = await callWithRetry(async () => {
-      const response = await client.chat.completions.create({
-        model: GROQ_MODEL,
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: userPrompt }
-        ],
-        response_format: { type: 'json_object' },
-        temperature: 0.3
-      });
-      return response.choices[0]?.message?.content;
+    const result = await requestGroqChatCompletion(client, {
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userPrompt }
+      ],
+      response_format: { type: 'json_object' },
+      temperature: 0.3
     });
 
     const parsed = safeParseJSON(result);

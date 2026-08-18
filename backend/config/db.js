@@ -5,7 +5,7 @@ const env = require('./env');
 // Set reliable public DNS resolvers to handle MongoDB Atlas SRV lookup on Windows
 try {
   dns.setServers(['8.8.8.8', '1.1.1.1']);
-} catch (e) {
+} catch {
   // Ignore if custom DNS cannot be set in some sandbox environments
 }
 

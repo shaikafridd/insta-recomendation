@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { getRecommendationStreamUrl } from '../services/api';
 
@@ -66,7 +67,7 @@ export const UserProvider = ({ children }) => {
             setHasNewRecNotification(true);
             showToast(`💡 Live AI Recommendation: "${parsed.data.recommendedTechReel}"`);
           }
-        } catch (err) {
+        } catch {
           // Heartbeat comment frame
         }
       };

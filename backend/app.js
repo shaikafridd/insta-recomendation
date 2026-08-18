@@ -13,7 +13,7 @@ const { getConnectionStatus } = require('./config/db');
 const cache = require('./config/redis');
 const env = require('./config/env');
 const AppError = require('./utils/AppError');
-const { RATE_LIMITS } = require('./constants');
+const { RATE_LIMITS, CSP_DIRECTIVES } = require('./constants');
 
 const app = express();
 
@@ -28,18 +28,7 @@ const app = express();
 app.use(
   helmet({
     contentSecurityPolicy: {
-      directives: {
-        defaultSrc: ["'self'"],
-        scriptSrc: ["'self'", "'unsafe-inline'"],
-        styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
-        fontSrc: ["'self'", 'https://fonts.gstatic.com'],
-        imgSrc: ["'self'", 'data:', 'https://res.cloudinary.com', 'https://commondatastorage.googleapis.com'],
-        mediaSrc: ["'self'", 'blob:', 'data:', 'https://res.cloudinary.com', 'https://commondatastorage.googleapis.com'],
-        connectSrc: ["'self'", 'https://api.groq.com', 'https://res.cloudinary.com', 'https://commondatastorage.googleapis.com'],
-        frameAncestors: ["'none'"],
-        objectSrc: ["'none'"],
-        baseUri: ["'self'"]
-      }
+      directives: CSP_DIRECTIVES
     },
     crossOriginResourcePolicy: { policy: 'cross-origin' },
     crossOriginEmbedderPolicy: false,
@@ -248,7 +237,7 @@ app.use((req, res, next) => {
 // ==========================================
 // 6. GLOBAL CENTRALIZED ERROR HANDLER
 // ==========================================
-app.use((err, req, res, next) => {
+app.use((err, req, res, _next) => {
   const statusCode = err.statusCode || 500;
   const message = err.message || 'Internal Server Error';
 

@@ -1,5 +1,5 @@
 const dns = require('dns');
-try { dns.setServers(['8.8.8.8', '1.1.1.1']); } catch (e) {}
+try { dns.setServers(['8.8.8.8', '1.1.1.1']); } catch {}
 
 const mongoose = require('mongoose');
 const env = require('../config/env');

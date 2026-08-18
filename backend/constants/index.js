@@ -46,11 +46,25 @@ const RATE_LIMITS = Object.freeze({
   SYNC_MAX: 10
 });
 
+const CSP_DIRECTIVES = Object.freeze({
+  defaultSrc: Object.freeze(["'self'"]),
+  scriptSrc: Object.freeze(["'self'", "'unsafe-inline'"]),
+  styleSrc: Object.freeze(["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com']),
+  fontSrc: Object.freeze(["'self'", 'https://fonts.gstatic.com']),
+  imgSrc: Object.freeze(["'self'", 'data:', 'https://res.cloudinary.com', 'https://commondatastorage.googleapis.com']),
+  mediaSrc: Object.freeze(["'self'", 'blob:', 'data:', 'https://res.cloudinary.com', 'https://commondatastorage.googleapis.com']),
+  connectSrc: Object.freeze(["'self'", 'https://api.groq.com', 'https://res.cloudinary.com', 'https://commondatastorage.googleapis.com']),
+  frameAncestors: Object.freeze(["'none'"]),
+  objectSrc: Object.freeze(["'none'"]),
+  baseUri: Object.freeze(["'self'"])
+});
+
 module.exports = {
   CATEGORIES,
   DIFFICULTIES,
   EVENT_TYPES,
   ENGAGEMENT_CONFIG,
   CACHE_CONFIG,
-  RATE_LIMITS
+  RATE_LIMITS,
+  CSP_DIRECTIVES
 };

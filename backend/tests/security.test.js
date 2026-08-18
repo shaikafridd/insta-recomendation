@@ -103,4 +103,23 @@ describe('Security & Input Sanitization Suite', () => {
     assert.strictEqual(notFound.statusCode, 404);
     assert.strictEqual(notFound.isOperational, true);
   });
+
+  it('should verify centralized constants are immutable against prototype pollution (Object.freeze)', () => {
+    const { RATE_LIMITS, CATEGORIES } = require('../constants');
+    assert.strictEqual(Object.isFrozen(RATE_LIMITS), true);
+    assert.strictEqual(Object.isFrozen(CATEGORIES), true);
+
+    assert.throws(() => {
+      'use strict';
+      RATE_LIMITS.API = null;
+    }, /TypeError/);
+  });
+
+  it('should verify Content Security Policy directives whitelist verified media CDNs', () => {
+    const { CSP_DIRECTIVES } = require('../constants');
+    assert.ok(CSP_DIRECTIVES.mediaSrc.includes('https://res.cloudinary.com'));
+    assert.ok(CSP_DIRECTIVES.mediaSrc.includes('https://commondatastorage.googleapis.com'));
+    assert.strictEqual(CSP_DIRECTIVES.frameAncestors[0], "'none'");
+    assert.strictEqual(CSP_DIRECTIVES.objectSrc[0], "'none'");
+  });
 });
