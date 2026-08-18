@@ -14,7 +14,9 @@ export const Sidebar = ({ onOpenRecommendations, onOpenProfile }) => {
     interactionCount,
     sessionDwellSeconds,
     showToast,
-    hasNewRecNotification
+    hasNewRecNotification,
+    isStudyModeActive,
+    resetStudyMode
   } = useUser();
 
   return (
@@ -127,6 +129,23 @@ export const Sidebar = ({ onOpenRecommendations, onOpenProfile }) => {
           <div className="stat-row">
             <span>Anti-Hype Filter:</span>
             <span className="badge-active">ACTIVE</span>
+          </div>
+          <div className="stat-row">
+            <span>Study Mode:</span>
+            {isStudyModeActive ? (
+              <span
+                className="badge-active"
+                style={{ background: '#059669', color: '#ffffff', cursor: 'pointer' }}
+                onClick={resetStudyMode}
+                title="Click to reset and show all categories"
+              >
+                🎯 STUDY ONLY (Memes Hidden)
+              </span>
+            ) : (
+              <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                Like study reel to activate
+              </span>
+            )}
           </div>
         </div>
       </aside>

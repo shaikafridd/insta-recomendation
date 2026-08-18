@@ -40,7 +40,7 @@ export const ReelCard = ({
   onOpenRecommendations,
   onHeartPop
 }) => {
-  const { isMuted, toggleMute, showToast } = useUser();
+  const { isMuted, toggleMute, showToast, activateStudyMode } = useUser();
   const videoRef = useRef(null);
   const isMounted = activeIndex === undefined || Math.abs(index - activeIndex) <= 1;
   const [isPlaying, setIsPlaying] = useState(false);
@@ -169,6 +169,12 @@ export const ReelCard = ({
       watchPercent: Math.round(currentPct),
       dwellMs: Math.floor((video?.currentTime || 1) * 1000)
     });
+
+    if (reel.category !== 'Entertainment') {
+      activateStudyMode(reel.category);
+    } else {
+      showToast('Liked Reel ❤️');
+    }
   };
 
   const handleLikeClick = (e) => {
@@ -188,7 +194,12 @@ export const ReelCard = ({
         watchPercent: Math.round(currentPct),
         dwellMs: Math.floor((video?.currentTime || 1) * 1000)
       });
-      showToast('Liked Reel ❤️');
+
+      if (reel.category !== 'Entertainment') {
+        activateStudyMode(reel.category);
+      } else {
+        showToast('Liked Reel ❤️');
+      }
     }
   };
 

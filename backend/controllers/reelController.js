@@ -1,4 +1,5 @@
 const { Reel } = require('../models/Reel');
+const { Interaction } = require('../models/Interaction');
 const cloudinaryService = require('../services/cloudinaryService');
 const groqService = require('../services/groqService');
 const AppError = require('../utils/AppError');
@@ -117,31 +118,91 @@ const syncCloudinaryReels = async (req, res, next) => {
 };
 
 /**
- * Fetch all reels with optional category & isHypeBait filtering
+ * Helper to randomize/shuffle array for fresh refresh experiences
+ * @param {Array} array
+ * @returns {Array}
+ */
+const shuffleReels = (array) => {
+  const arr = [...array];
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+};
+
+/**
+ * Fetch all reels with dynamic session randomization and study-mode anti-meme filtering
  */
 const getAllReels = async (req, res, next) => {
   try {
-    const { category, isHypeBait, limit = 50, page = 1 } = req.query;
+    const { category, isHypeBait, userId, shuffle = 'true', limit = 50, page = 1 } = req.query;
     const filter = {};
 
     if (category) filter.category = category;
     if (isHypeBait !== undefined) filter.isHypeBait = isHypeBait === 'true';
 
+    // Check if user has liked study/educational reels
+    let hasLikedStudyReel = false;
+    const likedStudyCategories = [];
+
+    if (userId) {
+      const recentLikes = await Interaction.find({
+        userId,
+        eventType: 'like'
+      })
+        .populate('reelId')
+        .sort({ timestamp: -1 })
+        .limit(20)
+        .lean();
+
+      for (const interaction of recentLikes) {
+        const likedReel = interaction.reelId;
+        if (likedReel && likedReel.category && likedReel.category !== 'Entertainment') {
+          hasLikedStudyReel = true;
+          if (!likedStudyCategories.includes(likedReel.category)) {
+            likedStudyCategories.push(likedReel.category);
+          }
+        }
+      }
+    }
+
+    // If user has liked study reels, STRICTLY filter out memes & entertainment!
+    if (hasLikedStudyReel && !category) {
+      filter.category = { $ne: 'Entertainment' };
+      filter.isHypeBait = false;
+    }
+
     const skip = (Number(page) - 1) * Number(limit);
-    const reels = await Reel.find(filter)
+    let reels = await Reel.find(filter)
       .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(Number(limit))
       .lean();
 
-    const total = await Reel.countDocuments(filter);
+    // If user liked specific study categories, prioritize them first
+    if (likedStudyCategories.length > 0) {
+      const matchingReels = reels.filter((r) => likedStudyCategories.includes(r.category));
+      const otherStudyReels = reels.filter((r) => !likedStudyCategories.includes(r.category));
+
+      if (shuffle === 'true') {
+        reels = [...shuffleReels(matchingReels), ...shuffleReels(otherStudyReels)];
+      } else {
+        reels = [...matchingReels, ...otherStudyReels];
+      }
+    } else if (shuffle === 'true') {
+      reels = shuffleReels(reels);
+    }
+
+    const paginated = reels.slice(skip, skip + Number(limit));
+    const total = reels.length;
 
     return res.status(200).json({
       success: true,
       total,
+      studyModeActive: hasLikedStudyReel,
+      likedCategories: likedStudyCategories,
       page: Number(page),
       limit: Number(limit),
-      data: reels
+      data: paginated
     });
   } catch (error) {
     next(error);

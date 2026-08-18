@@ -16,6 +16,11 @@ export const UserProvider = ({ children }) => {
   const [latestRecommendation, setLatestRecommendation] = useState(null);
   const [hasNewRecNotification, setHasNewRecNotification] = useState(false);
 
+  const [isStudyModeActive, setIsStudyModeActive] = useState(() => {
+    return localStorage.getItem('study_mode_active') === 'true';
+  });
+  const [activeStudyCategory, setActiveStudyCategory] = useState(null);
+
   // Sync userId to localStorage
   const setUserId = (newId) => {
     const clean = newId.trim() || 'student_101';
@@ -23,6 +28,20 @@ export const UserProvider = ({ children }) => {
     localStorage.setItem('reels_user_id', clean);
     setLatestRecommendation(null);
     setHasNewRecNotification(false);
+  };
+
+  const activateStudyMode = (category) => {
+    setIsStudyModeActive(true);
+    setActiveStudyCategory(category || 'Tech');
+    localStorage.setItem('study_mode_active', 'true');
+    showToast(`🎯 Study Mode Activated (${category || 'Tech'})! Memes filtered out.`);
+  };
+
+  const resetStudyMode = () => {
+    setIsStudyModeActive(false);
+    setActiveStudyCategory(null);
+    localStorage.removeItem('study_mode_active');
+    showToast('Feed reset to all content categories.');
   };
 
   const showToast = (msg) => {
@@ -102,7 +121,12 @@ export const UserProvider = ({ children }) => {
         latestRecommendation,
         setLatestRecommendation,
         hasNewRecNotification,
-        setHasNewRecNotification
+        setHasNewRecNotification,
+        isStudyModeActive,
+        setIsStudyModeActive,
+        activeStudyCategory,
+        activateStudyMode,
+        resetStudyMode
       }}
     >
       {children}

@@ -12,7 +12,7 @@ import './styles/reels.css';
 import './styles/modals.css';
 
 export const App = () => {
-  const { showToast } = useUser();
+  const { showToast, userId, isStudyModeActive, activeStudyCategory } = useUser();
   const [reels, setReels] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isRecModalOpen, setIsRecModalOpen] = useState(false);
@@ -20,21 +20,33 @@ export const App = () => {
   const [heartPopPosition, setHeartPopPosition] = useState(null);
   const feedRef = useRef(null);
 
-  useEffect(() => {
-    loadCatalog();
-  }, []);
-
-  const loadCatalog = async () => {
+  const loadCatalog = React.useCallback(async () => {
     setLoading(true);
     try {
-      const data = await fetchReels();
+      const data = await fetchReels(30, userId);
       setReels(data);
     } catch (err) {
       console.error('Failed to load reels catalog:', err);
     } finally {
       setLoading(false);
     }
-  };
+  }, [userId]);
+
+  useEffect(() => {
+    loadCatalog();
+  }, [loadCatalog]);
+
+  // Compute displayed reels based on study mode
+  const displayedReels = React.useMemo(() => {
+    if (!isStudyModeActive) return reels;
+    const studyReels = reels.filter((r) => r.category !== 'Entertainment' && !r.isHypeBait);
+    if (activeStudyCategory) {
+      const matching = studyReels.filter((r) => r.category === activeStudyCategory);
+      const otherStudy = studyReels.filter((r) => r.category !== activeStudyCategory);
+      return [...matching, ...otherStudy];
+    }
+    return studyReels;
+  }, [reels, isStudyModeActive, activeStudyCategory]);
 
   const handleHeartPop = (x, y) => {
     setHeartPopPosition({ x: x || window.innerWidth / 2, y: y || window.innerHeight / 2 });
@@ -72,7 +84,7 @@ export const App = () => {
       {/* Main Reels Feed Area */}
       <main id="main-content" className="reels-main-wrapper" role="main" aria-label="Reels Main Feed Area">
         <ReelsFeed
-          reels={reels}
+          reels={displayedReels}
           loading={loading}
           feedRef={feedRef}
           onOpenRecommendations={() => setIsRecModalOpen(true)}
